@@ -42,7 +42,7 @@ feedparser==6.0.14
     # via curated-feed (pyproject.toml)
 feedparser-sgmllib==2.1.0
     # via feedparser
-filelock==3.32.2
+filelock==4.0.3
     # via
     #   python-discovery
     #   virtualenv
