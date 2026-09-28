@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Example Feed</title>
+    <link>https://example.com</link>
+    <description>A feed used only by the tests.</description>
+
+    <item>
+      <title>Recent Item</title>
+      <link>https://example.com/recent?utm_source=feedly&amp;utm_medium=rss&amp;id=42#section</link>
+      <pubDate>Sat, 08 Aug 2026 09:14:00 GMT</pubDate>
+      <description><![CDATA[
+        <p>First sentence of the summary, with <a href="https://example.com/x">a link</a>
+        and <strong>markup</strong>.</p>
+        <p>Second paragraph, present so that truncation has something to cut into.
+        It rambles on for a while about nothing in particular, at some length,
+        precisely so that a short character limit takes effect mid-sentence.</p>
+      ]]></description>
+    </item>
+
+    <item>
+      <title>Old Item</title>
+      <link>https://example.com/old</link>
+      <pubDate>Mon, 06 Jan 2025 12:00:00 GMT</pubDate>
+      <description>Published well outside any reasonable lookback window.</description>
+    </item>
+
+    <item>
+      <title>Undated Item</title>
+      <link>https://example.com/undated/</link>
+      <description>No pubDate at all, which is common and not a reason to drop it.</description>
+    </item>
+
+    <item>
+      <title>Item Without A Link</title>
+      <pubDate>Sat, 08 Aug 2026 10:00:00 GMT</pubDate>
+      <description>Unusable: there is no URL to identify it by.</description>
+    </item>
+
+    <item>
+      <title>Tracked Duplicate</title>
+      <link>https://EXAMPLE.com:443/recent?id=42&amp;fbclid=abc123</link>
+      <pubDate>Sat, 08 Aug 2026 11:30:00 GMT</pubDate>
+      <description>The same article as Recent Item, reached through a tracked URL.</description>
+    </item>
+  </channel>
+</rss>

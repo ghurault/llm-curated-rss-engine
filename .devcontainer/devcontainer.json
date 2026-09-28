@@ -1,0 +1,56 @@
+{
+  "name": "curated-feed",
+  // The same Dockerfile the scheduled run is built from, at its development
+  // stage: every pinned dependency, and none of the application.
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "target": "devcontainer"
+  },
+  // common-utils replaces the non-root user and sudo that the Microsoft image
+  // brought. Node is in the image now, so there is no node feature.
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "vscode"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "remoteUser": "vscode",
+  // The chown is for a machine that has never built this: a named volume over a
+  // directory the image does not have is created root-owned, and ~/.claude has
+  // to be writable by the user that reads it.
+  "postCreateCommand": "sudo chown vscode:vscode /home/vscode/.claude && make init",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "charliermarsh.ruff",
+        "davidanson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
+        "mhutchie.git-graph",
+        "mkhl.shfmt",
+        "ms-python.black-formatter",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.datawrangler",
+        "ms-toolsai.jupyter",
+        "ms-vscode.live-server",
+        "njpwerner.autodocstring",
+        "tamasfe.even-better-toml",
+        "tekumara.typos-vscode",
+        "yzhang.markdown-all-in-one"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.testing.pytestEnabled": true
+      }
+    }
+  },
+  // Named volume so ~/.claude (session state, credentials) survives rebuilds.
+  "mounts": [
+    "source=claude-code-config,target=/home/vscode/.claude,type=volume"
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  "runArgs": ["--env-file", ".env"]
+}

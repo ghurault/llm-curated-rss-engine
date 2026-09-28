@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RSS 2.0, subscribed to outside any folder. -->
+<rss version="2.0">
+  <channel>
+    <title>Alpha Journal</title>
+    <link>https://alpha.example.invalid</link>
+    <description>Reporting.</description>
+    <item>
+      <title>A ruling on training data</title>
+      <link>https://alpha.example.invalid/one</link>
+      <description>&lt;p&gt;The court held that &lt;em&gt;fair use&lt;/em&gt; did not apply .&lt;/p&gt;</description>
+      <pubDate>{t2}</pubDate>
+    </item>
+    <item>
+      <title>A second look at the ruling</title>
+      <link>https://alpha.example.invalid/two</link>
+      <description>What the decision leaves unsettled.</description>
+      <pubDate>{t4}</pubDate>
+    </item>
+    <item>
+      <title>Last month's news</title>
+      <link>https://alpha.example.invalid/old</link>
+      <description>Long since read.</description>
+      <pubDate>{stale}</pubDate>
+    </item>
+  </channel>
+</rss>

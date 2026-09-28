@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Atom, filed under a folder: the other dialect feedparser has to handle. -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Beta Review</title>
+  <link href="https://beta.example.invalid"/>
+  <id>https://beta.example.invalid/</id>
+  <updated>{t1}</updated>
+  <entry>
+    <title>The measurement problem nobody solved</title>
+    <link href="https://beta.example.invalid/one"/>
+    <id>tag:beta.example.invalid,2026:one</id>
+    <updated>{t1}</updated>
+    <summary>A benchmark that does not measure what it claims to.</summary>
+  </entry>
+  <entry>
+    <title>A quieter result</title>
+    <link href="https://beta.example.invalid/two"/>
+    <id>tag:beta.example.invalid,2026:two</id>
+    <updated>{t5}</updated>
+    <summary>Incremental, and honest about it.</summary>
+  </entry>
+</feed>

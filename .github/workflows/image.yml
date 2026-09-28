@@ -1,0 +1,105 @@
+name: image
+
+# The engine's execution environment, built and exercised, and published
+# nowhere. Building is not publishing: ubuntu-latest has Docker preinstalled, so
+# every unknown in the Dockerfile can be retired while GHCR stays switched off —
+# whether the pipeline runs on a slim glibc base, whether the upload's toolchain
+# works from the image without reaching the registry, and whether an installed
+# engine still finds the package data a checkout hands it for free. Enabling the
+# registry is then a visibility toggle against a Dockerfile already known to run.
+#
+# The one thing this cannot rehearse is `jobs.<id>.container:`, which resolves an
+# image from a registry before any step of the job runs. That waits for the
+# split, and is the reason this prototype is worth having before it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: curated-feed:ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # setuptools_scm reads the version from annotated tags.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # The build context holds no .git on purpose, so the version is worked out
+      # here and passed in. Asked of setuptools_scm rather than assembled from
+      # `git describe`, so that the image reports what a build from this
+      # checkout would report and not an approximation of it.
+      - name: Work out the version
+        id: version
+        run: |
+          pip install --quiet setuptools_scm
+          echo "version=$(python -m setuptools_scm)" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          docker build \
+            --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION" \
+            --tag "$IMAGE" .
+
+      # A digest is what pins an engine, and the version is how a run says which
+      # one it got. The fallback the Dockerfile carries for a bare `docker build`
+      # must not be what a published image reports.
+      - name: The engine knows which engine it is
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          installed=$(docker run --rm "$IMAGE" \
+            python -c 'from importlib.metadata import version; print(version("curated-feed"))')
+          echo "built from $VERSION, installed as $installed"
+          test "$installed" != "0.0.0+unknown"
+
+      # With the network switched off, which is the assertion rather than a
+      # precaution: `npx wrangler@4` would resolve the range against the
+      # registry, and a bare package name runs the release the image installed.
+      # That property is the whole reason for baking one in, and it is invisible
+      # from a runner that has a registry to fall back on.
+      - name: The upload's toolchain, offline
+        run: |
+          docker run --rm --network none "$IMAGE" node --version
+          docker run --rm --network none "$IMAGE" npx --yes wrangler --version
+
+      # Offline again, and for the same reason it is offline in validate.yml:
+      # the command reads configuration and the filesystem, so a run of it that
+      # needed the network would be a bug in the command.
+      - name: The runners in this repository
+        run: |
+          docker run --rm --network none -v "$PWD:/w" -w /w "$IMAGE" \
+            curate-validate feeds/
+
+      # A whole day from an installed engine, which is the only place the
+      # package data and the entry points are really exercised. The throwaway
+      # runner is built inside the mounted workspace rather than in /tmp, so
+      # that the step below can say what a container leaves there.
+      - name: A day, end to end
+        run: |
+          docker run --rm --network none -v "$PWD:/w" -w /w "$IMAGE" \
+            scripts/smoke.sh build/smoke
+
+      # The ownership answer in one line: a container job runs as root, so
+      # everything it wrote into the workspace is root's and the runner user
+      # cannot remove it without sudo. Harmless here, and the thing to remember
+      # when the callee runs in a container and `actions/cache/save` starts
+      # saving a state/<feed> written this way.
+      - name: What the container left behind
+        run: |
+          ls -ld build build/smoke
+          sudo rm -rf build

@@ -1,0 +1,42 @@
+# A complete configuration, used to test loading and overriding.
+
+[paths]
+sources = "subscriptions.opml"
+corpus_dir = "corpus"
+policy = "policy.md"
+state_dir = "state"
+build_dir = "build"
+
+[fetch]
+lookback_days = 3
+summary_max_chars = 400
+concurrency = 4
+timeout_seconds = 15.0
+max_retries = 1
+user_agent = "test-agent/1.0"
+
+[score]
+provider = "stub"
+model = "test-model"
+max_tokens = 1000
+stub_items = 2
+
+[policy]
+floor = 3.0
+max_items = 8
+preference_cap = 3
+rationale_mode = "minimal"
+
+[policy.adjustments]
+recurrence = 1.0
+recurrence_cap_sources = 2
+staleness = -1.0
+staleness_hours = 48
+penalty = -1.0
+
+[publish]
+window = 50
+title = "Test feed"
+author = "test"
+site_url = "https://example.invalid"
+path_prefix = "test-prefix"

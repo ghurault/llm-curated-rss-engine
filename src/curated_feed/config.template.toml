@@ -1,0 +1,185 @@
+# The annotated reference for every setting, and the starting point for a new
+# runner. Nothing loads this file: it ships with the engine and is printed by
+# `curate-template config`, so the copy a runner edits is its own.
+#
+# To add a runner:
+#
+#   1. curate-template config > feeds/<name>/config.toml, and replace every <name>
+#   2. write feeds/<name>/editorial-policy.md and export feeds/<name>/sources.opml
+#   3. generate a Worker name and path segment:
+#        python -c "import secrets; print(secrets.token_hex(4), secrets.token_hex(8))"
+#      and set [deploy] project and [publish] site_url from the first
+#   4. add <name> to the matrix in .github/workflows/daily.yml
+#
+# Nothing needs creating at the host: the first upload creates the Worker under
+# the name below. See docs/SETUP.md.
+#
+# Paths are resolved relative to this file, so commands work from any directory.
+# Every value here can be overridden by a command-line flag.
+
+[paths]
+# Read at runtime and assembled into the prompt. Both are this runner's own: the
+# subscriptions it reads and the taste it applies.
+#
+# The scoring prompt is not here and cannot be put here. It is the engine's
+# contract with its own parser — its response section is the schema the pipeline
+# reads back — so it ships with the package and versions with it. Trying a
+# different one for the length of one command is `--scoring-prompt PATH`.
+sources = "sources.opml"
+policy = "editorial-policy.md"
+
+# Written to. Every one of these carries the runner's name: two runners sharing a
+# state directory would append to a single published log and race for a single
+# Worker, and neither failure says so.
+corpus_dir = "../../eval/corpus/<name>"
+state_dir = "../../state/<name>"
+build_dir = "../../build/<name>"
+
+[fetch]
+# How many days back to keep items, filtered on publication date.
+lookback_days = 2
+
+# Summaries are stripped of HTML and truncated to this many characters.
+summary_max_chars = 500
+
+# Concurrent HTTP requests. Keep this modest: these are other people's servers.
+concurrency = 8
+
+# Per-request timeout in seconds, and retries on timeout / 429 / 5xx.
+timeout_seconds = 20.0
+max_retries = 2
+
+# Sent on every request. Replace the contact URL with your own, so feed operators
+# have somewhere to complain to.
+user_agent = "curated-feed/0.1 (personal feed curation; contact: set-in-config.toml)"
+
+[paywall]
+# Whether to check that a selected article can actually be read. A selected
+# article behind a subscriber wall is a wasted slot in a feed capped at ten.
+#
+# Off by default, and that is deliberate: turning it on makes one request per
+# graded article to somebody else's site, every day. Turn it on for a runner
+# whose sources are partly subscriber-only, and leave it off otherwise.
+enabled = false
+
+# Concurrent requests. Lower than [fetch] on purpose: these are article pages,
+# and there are far more of them than there are feeds.
+concurrency = 4
+
+# Per-request timeout in seconds, and retries on timeout / 429 / 5xx. A 403 is
+# never retried — a site that refuses robots refuses them again tomorrow.
+timeout_seconds = 10.0
+max_retries = 1
+
+# A bound on one day's requests, not a target. Articles are probed in order of
+# consequence, so a cap truncates the least consequential; whatever it drops is
+# reported rather than passing quietly as full coverage.
+max_checks = 100
+
+# Sent on every request. Empty falls back to the [fetch] user_agent above,
+# which is the usual case: one contact URL for the whole runner.
+user_agent = ""
+
+[score]
+# Which scorer runs:
+#   "stub"      grades the most recent items and calls nothing
+#   "file"      reads a response saved from a chat session (--response PATH)
+#   "anthropic" calls Claude; needs credentials, see the README
+provider = "anthropic"
+
+# Required by the anthropic scorer, ignored by the others.
+# Editorial judgement is the product, so this is the one place worth paying for:
+# Sonnet at ~300 headlines a day runs a few dollars a month, against ~$2-3 for
+# Haiku 4.5. If the picks disappoint, re-score a saved day against a larger
+# model before blaming the policy: `curate-run --date DATE --from score` costs
+# one call, not one day.
+model = "claude-sonnet-5"
+
+# Generous: a truncated response is a hard failure, not a short day. Thinking
+# counts against this too, so raising `effort` below spends part of it.
+max_tokens = 32000
+
+# How hard the model works: low, medium, high, xhigh, max.
+# Empty omits the parameter, which is REQUIRED for Haiku 4.5 — it rejects the
+# request outright. Blank this again if the model above ever goes back to Haiku.
+effort = "medium"
+
+# A day of ~300 candidates is one long call. Responses stream, so this bounds
+# the whole request rather than the gap between tokens.
+timeout_seconds = 900.0
+
+# How many items the stub scorer grades.
+stub_items = 5
+
+[policy]
+# The score floor. NOT a tunable: it must equal the maximum consequence score,
+# which is what lets a maximum-consequence article matching none of your topics
+# qualify on consequence alone. See docs/scoring-spec.md §3.
+floor = 3.0
+
+# Never publish more than this many items in a day, and never pad to reach it.
+max_items = 10
+
+# Topic matches are worth +1 each up to this total.
+preference_cap = 3
+
+# What the published feed says about an item: "none" or "minimal".
+rationale_mode = "minimal"
+
+[policy.adjustments]
+# The weights of docs/scoring-spec.md §2.3. Tunable, unlike the floor.
+recurrence = 1.0
+# Sources needed for the full recurrence weight: the bonus scales linearly
+# from 0 at 1 source up to `recurrence` at this many. Raise it on a feed where
+# a handful of sources is the norm, or the bonus stops discriminating.
+recurrence_cap_sources = 2
+staleness = -1.0
+staleness_hours = 48
+
+# Applied once per rule from the editorial policy's penalties section.
+penalty = -1.0
+
+[publish]
+# How many entries the feed carries. Feedly polls on its own schedule and can
+# miss items in a file that churns too fast.
+window = 100
+
+# Deliberately bland: this is public. No name, employer or project.
+title = "Curated Feed"
+author = "curated-feed"
+
+# Where the feed is served from, and the unguessable path segment under it.
+# An empty prefix serves the feed at the root of site_url, which leaves the
+# hostname carrying the whole secret.
+#
+# Left empty here on purpose. An unset host renders a feed whose id is a stable
+# urn and publishes nowhere; a plausible-looking placeholder would instead
+# create a Worker at a guessable name and serve the feed from it.
+site_url = ""
+path_prefix = ""
+
+[deploy]
+# Which deployer runs:
+#   "none"      uploads nothing; the built feed stays in build/
+#   "wrangler"  uploads build/ to a Cloudflare Worker serving static assets
+# Uploading happens in CI. Leaving this at "none" is what stops a replay of a
+# stub day from reaching the internet; `curate-run` also needs --deploy before
+# it will publish at all.
+provider = "wrangler"
+
+# The Worker's name. It is the first label of the hostname the feed is served
+# from, so it is the unguessable part of the URL: make it random, not
+# descriptive, and keep it in step with [publish] site_url — `curate-validate`
+# checks that the two agree wherever the host makes that inferable.
+#
+# Empty is refused by the deployer rather than defaulted, which is what stops a
+# copied template from publishing a second feed over the first one's Worker.
+project = ""
+
+# Which Workers runtime version the upload pins. It changes nothing for a
+# Worker that is only static files, but wrangler asks for one when there is no
+# config file to read it from — and asks interactively, which in CI is a hang.
+compatibility_date = "2026-08-14"
+
+# One upload of a handful of small files.
+timeout_seconds = 300.0

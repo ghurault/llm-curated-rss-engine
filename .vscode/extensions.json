@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    "anthropic.claude-code",
+    "charliermarsh.ruff",
+    "davidanson.vscode-markdownlint",
+    "esbenp.prettier-vscode",
+    "kevinrose.vsc-python-indent",
+    "mhutchie.git-graph",
+    "mkhl.shfmt",
+    "ms-python.black-formatter",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-toolsai.datawrangler",
+    "ms-toolsai.jupyter",
+    "ms-vscode.live-server",
+    "njpwerner.autodocstring",
+    "tamasfe.even-better-toml",
+    "tekumara.typos-vscode",
+    "yzhang.markdown-all-in-one"
+  ]
+}

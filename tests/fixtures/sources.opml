@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+  <head>
+    <title>subscriptions</title>
+  </head>
+  <body>
+    <outline text="Loose Feed" title="Loose Feed" type="rss"
+             xmlUrl="https://loose.example.com/feed.xml" htmlUrl="https://loose.example.com"/>
+    <outline text="Alpha" title="Alpha">
+      <outline text="Alpha One" title="Alpha One" type="rss"
+               xmlUrl="https://one.example.com/rss" htmlUrl="https://one.example.com"/>
+      <outline text="Alpha Two" type="rss" xmlUrl="https://two.example.com/rss"/>
+      <outline text="Nested" title="Nested">
+        <outline text="Deep Feed" type="rss" xmlUrl="https://deep.example.com/atom"/>
+      </outline>
+    </outline>
+    <outline text="Beta">
+      <!-- Same feed filed under a second folder: kept once, at first occurrence. -->
+      <outline text="Alpha One" type="rss" xmlUrl="https://one.example.com/rss"/>
+      <outline text="Untitled Feed" type="rss" xmlUrl="https://beta.example.com/feed"/>
+    </outline>
+  </body>
+</opml>

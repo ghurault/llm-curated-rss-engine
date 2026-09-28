@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+  <head>
+    <title>subscriptions</title>
+  </head>
+  <body>
+    <outline text="Alpha Journal" title="Alpha Journal" type="rss"
+             xmlUrl="https://alpha.example.invalid/rss" htmlUrl="https://alpha.example.invalid"/>
+    <outline text="Research" title="Research">
+      <outline text="Beta Review" title="Beta Review" type="rss"
+               xmlUrl="https://beta.example.invalid/atom" htmlUrl="https://beta.example.invalid"/>
+      <outline text="Gamma Digest" title="Gamma Digest" type="rss"
+               xmlUrl="https://gamma.example.invalid/rss" htmlUrl="https://gamma.example.invalid"/>
+    </outline>
+  </body>
+</opml>

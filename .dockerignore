@@ -1,0 +1,18 @@
+# The build context is what the image installs, and nothing else. Most of this
+# repository is either a reader's own data or the apparatus of working on the
+# engine, and every file of it in the context is another way to invalidate a
+# layer cache on a commit that changed nothing the image contains.
+#
+# An allowlist rather than a list of exclusions, so that a new directory is out
+# until somebody says otherwise.
+*
+!LICENSE
+!README.md
+!pyproject.toml
+!requirements.txt
+!src
+
+# Re-excluded after the fact, because these appear inside src/ once the package
+# has been installed in editable mode and are not part of it.
+src/**/__pycache__
+src/**/*.egg-info

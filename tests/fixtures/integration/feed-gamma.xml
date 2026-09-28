@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RSS again, and it syndicates one of Alpha's articles with tracking
+     parameters appended: the same story arriving twice, which canonicalisation
+     is supposed to reduce to one record. -->
+<rss version="2.0">
+  <channel>
+    <title>Gamma Digest</title>
+    <link>https://gamma.example.invalid</link>
+    <description>Aggregated.</description>
+    <item>
+      <title>A ruling on training data</title>
+      <link>https://alpha.example.invalid/one?utm_source=gamma&amp;utm_medium=rss</link>
+      <description>Syndicated from Alpha Journal.</description>
+      <pubDate>{t6}</pubDate>
+    </item>
+    <item>
+      <title>Notes from the standards meeting</title>
+      <link>https://gamma.example.invalid/one</link>
+      <description>Who agreed to what.</description>
+      <pubDate>{t3}</pubDate>
+    </item>
+  </channel>
+</rss>

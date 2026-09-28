@@ -1,0 +1,23 @@
+[default]
+extend-ignore-re = [
+    # Ignore lines that end with `# spellchecker:disable-line`
+    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+    # Ignore the line after `# spellchecker:ignore-next-line`:
+    "(#|//)\\s*spellchecker:ignore-next-line\\n.*",
+    # Ignore blocks between `# spellchecker:off` and `# spellchecker:on`
+    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",
+]
+
+# Identifiers are group of words, e.g. my_identifier
+[default.extend-identifiers]
+# e.g. `my_identifier = "my_identifier"`
+
+[default.extend-words]
+# e.g. `word = "word"`
+hsa = "hsa" # HubSpot ad-tracking query parameter prefix, not a typo of "has"
+sur = "sur"
+
+# Subscription lists are committed (see docs/ARCHITECTURE.md D8) and are other
+# people's spelling: publication names, foreign-language titles, abbreviations.
+[files]
+extend-exclude = ["feeds/*/sources.opml"]

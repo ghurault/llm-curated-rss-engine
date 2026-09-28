@@ -1,0 +1,49 @@
+name: quality
+
+# Formatting, imports, docstrings, linting and spelling, all of it delegated to
+# the same .pre-commit-config.yaml the devcontainer installs as a git hook. The
+# hooks pin their own versions there, which is why nothing is pinned here.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A second push supersedes the first: the older run's answer is about code that
+# no longer exists.
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      # Each hook builds an isolated environment on first use. Keyed on the
+      # config, so bumping a hook's rev rebuilds and nothing else does.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - run: pip install pre-commit
+
+      # make-docs is skipped: it regenerates docs/api/, which is gitignored, and
+      # would need pdoc and the package installed to say nothing about the diff.
+      #
+      # conventional-pre-commit needs no skipping — it runs at the commit-msg
+      # stage, and --all-files runs the pre-commit stage.
+      - name: Run every hook
+        env:
+          SKIP: make-docs
+        run: pre-commit run --all-files --show-diff-on-failure --color=always

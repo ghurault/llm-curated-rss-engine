@@ -1,0 +1,47 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # setuptools_scm reads the version from annotated tags.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # requirements.txt, not requirements-dev.txt: this is the exact set the
+      # scheduled run installs, so a module in src/ that only imports because a
+      # development extra happened to be present fails here rather than at
+      # 06:00 with nothing published.
+      #
+      # The test runner is then installed under that same pinned set, so it
+      # cannot quietly move an application dependency to satisfy itself.
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+          pip install --constraint requirements.txt pytest pytest-cov
+
+      # Doctests included: pytest is configured to collect from src/ as well,
+      # and several of them are the only test a small function has.
+      - run: pytest
