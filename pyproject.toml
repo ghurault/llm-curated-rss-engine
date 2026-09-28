@@ -51,7 +51,7 @@ curate-template = "curated_feed.template:main"
 curate-validate = "curated_feed.validate:main"
 
 [project.urls]
-Repository = "https://github.com/ghurault/llm-curated-rss"
+Repository = "https://github.com/ghurault/llm-curated-rss-engine"
 # Homepage = ""
 # Documentation = ""
 # Issues = ""

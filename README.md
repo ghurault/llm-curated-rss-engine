@@ -1,6 +1,6 @@
 # LLM Curated RSS Feeds
 
-[![tests](https://github.com/ghurault/llm-curated-rss/actions/workflows/tests.yml/badge.svg)](https://github.com/ghurault/llm-curated-rss/actions/workflows/tests.yml)
+[![tests](https://github.com/ghurault/llm-curated-rss-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/ghurault/llm-curated-rss-engine/actions/workflows/tests.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

@@ -17,7 +17,7 @@ Nothing here repeats [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (why it is sha
 
 ## Container gotchas
 
-- **Tracked files are owned by `root` while the container runs as `vscode`.** Every edit fails with `EACCES`, and so does `git checkout -b` when `.git/refs/heads/<prefix>/` or `.git/logs/refs/heads/<prefix>/` already exists from an earlier branch. `sudo chown -R vscode:vscode /workspaces/llm-curated-rss` fixes both, and changes nothing but ownership.
+- **Tracked files are owned by `root` while the container runs as `vscode`.** Every edit fails with `EACCES`, and so does `git checkout -b` when `.git/refs/heads/<prefix>/` or `.git/logs/refs/heads/<prefix>/` already exists from an earlier branch. `sudo chown -R vscode:vscode /workspaces/llm-curated-rss-engine` fixes both, and changes nothing but ownership.
 - **The devcontainer is built from the repository's own `Dockerfile`**, so a change to it or to `.devcontainer/devcontainer.json` is not real until the container is rebuilt — and rebuilding restarts whatever session is running inside it. `git`, `curl`, `make` and Node are all in the `devcontainer` stage and nowhere else: the image the pipeline runs from carries Node, because `curate-deploy` shells out to `npx wrangler`, and none of the other three.
 - **No `prettier` on the command line**, though VS Code formats Markdown, YAML and JSON on save. Markdown tables must therefore be hand-aligned when written, and the editor may silently reformat a file just after a write: a failed `Edit` that reports `ENOENT` or "modified since read" has usually applied anyway. Check with `grep` before retrying, or the same change lands twice.
 - After adding a `[project.scripts]` entry point, `pip install -e . --no-deps` before the console script exists.
