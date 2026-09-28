@@ -1,16 +1,8 @@
 name: image
 
-# The engine's execution environment, built and exercised, and published
-# nowhere. Building is not publishing: ubuntu-latest has Docker preinstalled, so
-# every unknown in the Dockerfile can be retired while GHCR stays switched off —
-# whether the pipeline runs on a slim glibc base, whether the upload's toolchain
-# works from the image without reaching the registry, and whether an installed
-# engine still finds the package data a checkout hands it for free. Enabling the
-# registry is then a visibility toggle against a Dockerfile already known to run.
-#
-# The one thing this cannot rehearse is `jobs.<id>.container:`, which resolves an
-# image from a registry before any step of the job runs. That waits for the
-# split, and is the reason this prototype is worth having before it.
+# The engine's execution environment: built and exercised on every change, and
+# published to GHCR from main once every check below has passed. A configuration
+# repository pins what this publishes by digest; the tags are for finding one.
 on:
   pull_request:
   push:
@@ -25,11 +17,15 @@ concurrency:
 
 env:
   IMAGE: curated-feed:ci
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       # setuptools_scm reads the version from annotated tags.
@@ -53,6 +49,7 @@ jobs:
         run: |
           docker build \
             --build-arg "SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION" \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
             --tag "$IMAGE" .
 
       # A digest is what pins an engine, and the version is how a run says which
@@ -95,3 +92,33 @@ jobs:
         run: |
           ls -ld build build/smoke
           sudo rm -rf build
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The image the checks above ran, retagged rather than rebuilt, so what is
+      # published is exactly what was verified. `+` is not allowed in a tag.
+      - name: Publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for tag in "${VERSION//+/-}" "sha-$GITHUB_SHA" latest; do
+            docker tag "$IMAGE" "$REGISTRY_IMAGE:$tag"
+          done
+          docker push --all-tags "$REGISTRY_IMAGE"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$REGISTRY_IMAGE:latest")
+          {
+            echo "### Published"
+            echo
+            echo "Version \`$VERSION\`, pin with:"
+            echo
+            echo "\`\`\`"
+            echo "$digest"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
