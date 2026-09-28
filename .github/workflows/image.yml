@@ -77,14 +77,6 @@ jobs:
           docker run --rm --network none "$IMAGE" node --version
           docker run --rm --network none "$IMAGE" npx --yes wrangler --version
 
-      # Offline again, and for the same reason it is offline in validate.yml:
-      # the command reads configuration and the filesystem, so a run of it that
-      # needed the network would be a bug in the command.
-      - name: The runners in this repository
-        run: |
-          docker run --rm --network none -v "$PWD:/w" -w /w "$IMAGE" \
-            curate-validate feeds/
-
       # A whole day from an installed engine, which is the only place the
       # package data and the entry points are really exercised. The throwaway
       # runner is built inside the mounted workspace rather than in /tmp, so
