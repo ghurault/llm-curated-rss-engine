@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml -o requirements-dev.txt --all-extras
 annotated-types==0.8.0
     # via pydantic
-anthropic==0.122.0
+anthropic==1.8.0
     # via curated-feed (pyproject.toml)
 anyio==4.14.2
     # via
