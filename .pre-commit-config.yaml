@@ -36,6 +36,14 @@ repos:
     rev: v0.5.4
     hooks:
       - id: dockerfmt
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.15.1
+    hooks:
+      - id: hadolint
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
   # Installed in the devcontainer, not by pre-commit, so quality.yml skips them.
   - repo: local
     hooks:

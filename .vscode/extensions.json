@@ -4,6 +4,7 @@
     "charliermarsh.ruff",
     "davidanson.vscode-markdownlint",
     "esbenp.prettier-vscode",
+    "exiasr.hadolint",
     "kevinrose.vsc-python-indent",
     "mhutchie.git-graph",
     "mkhl.shfmt",
@@ -16,6 +17,7 @@
     "njpwerner.autodocstring",
     "tamasfe.even-better-toml",
     "tekumara.typos-vscode",
+    "timonwong.shellcheck",
     "yzhang.markdown-all-in-one"
   ]
 }

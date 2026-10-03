@@ -35,7 +35,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM base AS devcontainer
 
 # The hooks need git and make; the VS Code server needs libatomic1 on a slim
-# base. The rest is what makes a shell habitable.
+# base. The rest is what makes a shell habitable. Unpinned, like the base image's
+# own packages: Debian removes superseded versions from its mirrors.
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
