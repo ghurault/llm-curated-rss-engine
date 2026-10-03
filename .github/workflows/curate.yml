@@ -3,13 +3,10 @@ name: curate
 # One runner's day, as a job somebody else calls: the environment, the memory
 # and the pipeline. The caller owns the clock, the matrix and the secrets.
 #
-# The split is the point rather than a tidy-up. When the engine and the
-# configuration part company this half moves to the engine repository and is
-# called across repositories, and what has to be right by then is the interface:
-# which inputs cross it, which secrets are declared, who owns the cache and who
-# names the paths. All of that is unchanged by the move. Only the four setup
-# steps below go, collapsing into `container:` pinned by digest — along with the
-# checkout depth that exists solely so setuptools_scm can see a tag.
+# The engine runs from its published image, pinned by digest, so the caller's
+# 06:00 run changes behaviour only when this file's pin moves. The interface —
+# inputs, secrets, cache keys and paths — is what callers depend on, and was
+# settled before the move into this repository so that the move left it alone.
 #
 # A reusable workflow cannot matrix itself, which is why this takes one feed and
 # not a list: the fan-out has to happen on the calling side, and stays there.
@@ -48,28 +45,16 @@ jobs:
   curate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Moving the pin is how an engine release reaches the callers: take the
+    # digest from the summary of an `image` run on main.
+    container:
+      image: ghcr.io/ghurault/llm-curated-rss-engine@sha256:d47492f758eec62ace8e2fc74866688a33638ce69db32feeadb391013bc50c33
 
     steps:
       # The caller's repository, not this workflow's: a reusable workflow runs
-      # against the caller's checkout, which is what lets the runners stay in
-      # one repository and the engine in another.
-      #
-      # setuptools_scm reads the version from annotated tags.
+      # against the caller's checkout, which is where feeds/ comes from. The
+      # engine is in the image, so no history is needed.
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.14"
-          cache: pip
-          cache-dependency-path: requirements.txt
-
-      # `npx wrangler` needs a Node toolchain. Nothing else in the pipeline does,
-      # which is why the application has no Node dependency of its own.
-      - uses: actions/setup-node@v7
-        with:
-          node-version: lts/*
 
       # The corpus and the published log are the pipeline's memory, and are the
       # reader's data rather than the repository's, so they are not in git.
@@ -96,11 +81,6 @@ jobs:
             state/${{ inputs.feed }}
           key: pipeline-state-${{ inputs.feed }}-${{ github.run_id }}
           restore-keys: pipeline-state-${{ inputs.feed }}-
-
-      - name: Install
-        run: |
-          pip install -r requirements.txt
-          pip install -e . --no-deps
 
       # Inputs are passed through the environment rather than interpolated into
       # the script, so nothing typed into the dispatch form can become a command.
