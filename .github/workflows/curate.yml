@@ -66,6 +66,10 @@ jobs:
       # belong to the *calling* repository, which is worth confirming the first
       # time the call is cross-repository — losing it is a re-fetch, not an error.
       #
+      # The image has no zstd, so it compresses with gzip, and the compression is
+      # part of the cache version: caches saved before the move to the container
+      # are never restored. One cold start, accepted rather than adding zstd.
+      #
       # Keyed on the feed before the run id, so that one runner's restore-keys
       # prefix cannot match another's cache and hand it the wrong corpus.
       #
