@@ -49,6 +49,10 @@ jobs:
     # digest from the summary of an `image` run on main.
     container:
       image: ghcr.io/ghurault/llm-curated-rss-engine@sha256:d47492f758eec62ace8e2fc74866688a33638ce69db32feeadb391013bc50c33
+    # Container jobs default to `sh`, and "Curate and publish" needs a bash array.
+    defaults:
+      run:
+        shell: bash
 
     steps:
       # The caller's repository, not this workflow's: a reusable workflow runs
