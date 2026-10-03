@@ -24,7 +24,7 @@ Tests use small fixtures in `tests/fixtures/` and **never touch the network** â€
 Adding a test that needs either means the design has gone wrong somewhere; record the response as a fixture instead.
 
 Formatting and linting are the git hooks' job, and [`.github/workflows/quality.yml`](.github/workflows/quality.yml) runs the same hooks on every push and pull request.
-It is the same `.pre-commit-config.yaml`, so a commit that got through locally gets through there.
+It is the same `.pre-commit-config.yaml`, so a commit that got through locally gets through there; the CI job skips prettier, taplo and shfmt, which only the devcontainer installs.
 
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs `pytest` alongside it, against `requirements.txt` rather than `requirements-dev.txt`.
 That is the one check the devcontainer cannot reproduce, because the image installs the development set: a module in `src/` that imports something only a development extra provides passes locally and fails there.

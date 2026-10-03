@@ -26,6 +26,7 @@
         "charliermarsh.ruff",
         "davidanson.vscode-markdownlint",
         "esbenp.prettier-vscode",
+        "exiasr.hadolint",
         "mhutchie.git-graph",
         "mkhl.shfmt",
         "ms-python.black-formatter",
@@ -37,6 +38,7 @@
         "njpwerner.autodocstring",
         "tamasfe.even-better-toml",
         "tekumara.typos-vscode",
+        "timonwong.shellcheck",
         "yzhang.markdown-all-in-one"
       ],
       "settings": {

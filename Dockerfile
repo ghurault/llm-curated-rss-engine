@@ -35,7 +35,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM base AS devcontainer
 
 # The hooks need git and make; the VS Code server needs libatomic1 on a slim
-# base. The rest is what makes a shell habitable.
+# base. The rest is what makes a shell habitable. Unpinned, like the base image's
+# own packages: Debian removes superseded versions from its mirrors.
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
@@ -46,6 +48,28 @@ RUN apt-get update \
         openssh-client \
         procps \
     && rm -rf /var/lib/apt/lists/*
+
+# The formatters pre-commit runs as `language: system`, plus hadolint for its VS
+# Code extension. Pinned here, since the hook config cannot pin a system tool.
+ARG PRETTIER_VERSION=3.9.9
+ARG TAPLO_VERSION=0.10.0
+ARG SHFMT_VERSION=3.14.1
+ARG HADOLINT_VERSION=2.15.1
+RUN npm install --global --no-fund --no-audit "prettier@${PRETTIER_VERSION}" \
+    && npm cache clean --force \
+    && case "$(uname -m)" in \
+        aarch64) taplo=aarch64 shfmt=arm64 hadolint=arm64 ;; \
+        *) taplo=x86_64 shfmt=amd64 hadolint=x86_64 ;; \
+    esac \
+    && curl -fsSL -o /tmp/taplo.gz \
+        "https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-linux-${taplo}.gz" \
+    && gunzip -c /tmp/taplo.gz > /usr/local/bin/taplo \
+    && rm /tmp/taplo.gz \
+    && curl -fsSL -o /usr/local/bin/shfmt \
+        "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_${shfmt}" \
+    && curl -fsSL -o /usr/local/bin/hadolint \
+        "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-${hadolint}" \
+    && chmod 0755 /usr/local/bin/taplo /usr/local/bin/shfmt /usr/local/bin/hadolint
 
 # postCreate installs into this interpreter as a non-root user whose uid is not
 # known here, so everywhere pip installs to has to be writable by anyone. That is

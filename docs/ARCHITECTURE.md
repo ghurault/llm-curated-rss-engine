@@ -1,6 +1,6 @@
 # Architecture
 
-Decision record. Explains *why* the system is shaped this way, so that changes are made
+Decision record. Explains _why_ the system is shaped this way, so that changes are made
 deliberately rather than by accident.
 
 For how to run it, see `README.md`; for setting one up, `docs/SETUP.md`. For the ranking
@@ -53,7 +53,7 @@ This is four separable decisions. Bundling them is the usual mistake.
 | The arithmetic              | **Code**                         | Sub-scores on disk make coefficient tuning an offline sweep over the whole corpus, in milliseconds. If the model sums, every weight change costs an API call and returns non-deterministic results, so a change in output cannot be attributed to the change in weights. |
 | Threshold and selection     | **Code**                         | A model that knows there are ten slots fills them. An absolute floor applied outside the prompt is what makes a three-item day possible. Follows from the row above: if code scores, code must select.                                                                   |
 | Coefficients and the floor  | **Config**                       | Changeable without touching the prompt or the policy document.                                                                                                                                                                                                           |
-| Which articles get reported | **Model**, by absolute threshold | Consequence 0 is dropped without further grading. *Not* a consequence of the rows above — a separate choice, and the one that keeps the response short.                                                                                                                  |
+| Which articles get reported | **Model**, by absolute threshold | Consequence 0 is dropped without further grading. _Not_ a consequence of the rows above — a separate choice, and the one that keeps the response short.                                                                                                                  |
 
 The model supplies only judgements that require reading: consequence, which topics are a
 primary subject, whether an exclusion or penalty applies, whether the source is a forum or
@@ -83,7 +83,7 @@ against manual labels, the rubric is destroying information the model has.
 ## D2 — Deduplication is the model's; code does exact matching only
 
 Code collapses candidates with an identical canonical URL, and nothing else. That happens at
-fetch time rather than before the prompt, because the record id *is* a hash of the canonical
+fetch time rather than before the prompt, because the record id _is_ a hash of the canonical
 URL: the same article arriving through two feeds is one record, and the second is never
 written. No similarity thresholds, no fuzzy matching, no clustering pass.
 
@@ -93,7 +93,7 @@ the numbered list, and the coverage invariant below is defined over that list �
 code-side collapse has to be threaded through scoring, selection and the rejects log to stay
 accountable. That is a real amount of machinery for a case the model already handles: two
 outlets running the same headline is exactly the grouping it is asked for, and by the
-principle below it is a *loud* failure if it gets it wrong. Revisit if syndicated copies
+principle below it is a _loud_ failure if it gets it wrong. Revisit if syndicated copies
 start taking two slots in the same feed.
 
 Recognising that two differently-titled articles cover the same announcement is a reading
@@ -112,11 +112,11 @@ would be invisible aggregation by the back door.
 
 **Delegate what you would notice.** Three versions of the same announcement in a ten-item
 feed is glaring — it would be caught on the first morning, and the feedback loop is free
-because the feed is being read anyway. The failure is *loud*, so delegating is low-risk.
+because the feed is being read anyway. The failure is _loud_, so delegating is low-risk.
 
 Scoring drift is the opposite. A consequence score running systematically half a point
 generous produces a feed that looks entirely plausible. It is invisible in the output and
-shows up only in score distributions across a corpus. The failure is *silent*, so it wants
+shows up only in score distributions across a corpus. The failure is _silent_, so it wants
 externalising.
 
 ## D3 — One call for the whole day, no batching
@@ -166,7 +166,7 @@ or one of a handful of constants this module assigns itself (`RECURRENCE`,
 `STALENESS` in `select.py`); none of it is text the model chose.
 
 Topics and penalty rule names are the ones that stay out, and for the same reason as each
-other: both are unvalidated model output *about the reader's own interests*. Publishing a topic
+other: both are unvalidated model output _about the reader's own interests_. Publishing a topic
 would put the reader's topic list on a public URL; publishing a penalty's rule name would put
 whatever string the model invented for it there instead — the same leak, just arriving through
 the adjustments field rather than the topics one. Excluding both is what keeps "nothing about
@@ -225,7 +225,7 @@ free one.
 
 **Why a Worker and not Cloudflare Pages**, given that both serve the same files from the
 same network for the same nothing. Pages mints a permanent `<hash>.<project>.pages.dev`
-address on *every* deployment, so a daily job accumulates public addresses for something
+address on _every_ deployment, so a daily job accumulates public addresses for something
 whose privacy is its URL. `wrangler deploy` updates one address in place. The features that
 would argue the other way — Git builds, per-branch previews, dashboard rollbacks — are all
 things this project either does not want or already has: `state/published.jsonl` is the real
@@ -271,7 +271,7 @@ each runner directory gaining a state directory: `feeds/` stays committed whole 
 the configuration repository, which makes adding a feed by copying a directory safe —
 there is no runtime data to copy by accident.
 
-The price is that two runners *could* name one state directory, and nothing would
+The price is that two runners _could_ name one state directory, and nothing would
 say so: they would append to a single published log and upload each over the other,
 and both feeds would still render. Deriving those locations from the directory name
 in code would remove the hazard, at the cost of `state_dir` meaning something other
@@ -283,7 +283,7 @@ other's feed. Nothing needs creating at the host for that to be cheap — `wrang
 deploy` creates a Worker that does not exist yet, so a runner's Worker is a random
 name in its config and nothing more.
 
-Several feeds *can* share one Worker — one build tree, distinct path prefixes, one
+Several feeds _can_ share one Worker — one build tree, distinct path prefixes, one
 upload — and the reason not to is what a partial failure does. The upload is the
 manifest, so a tree assembled while one feed's job was failing deletes that feed
 from the internet, in the one stage whose failure looks exactly like a quiet week
@@ -330,7 +330,7 @@ means free. Publishers mark the restriction, never the absence of one.
 markup, not a judgement, so D1 puts it here. Putting the page in the prompt would mean tool
 use inside the scoring call, which would break three things at once: the single raw response
 saved unparsed as the day's audit trail, the cached document prefix `policy.py` builds, and
-the one-call-per-day shape of D3. A model reading the page would also catch *unmarked*
+the one-call-per-day shape of D3. A model reading the page would also catch _unmarked_
 paywalls, at the cost of ~50 extra calls a day — and an unmarked paywall is exactly the case
 the third verdict declines to guess at.
 
@@ -487,15 +487,15 @@ unreachable — the system degrades into a keyword filter with no error anywhere
 scale is rescaled, move the floor with it.
 
 **Every candidate is accounted for exactly once**, across the dropped index, the graded
-records, and the duplicate lists. This is the *only* detector of silent omission — a model
+records, and the duplicate lists. This is the _only_ detector of silent omission — a model
 losing its place in a long enumeration and finishing cleanly, with articles never
 considered. Truncation has its own signal in `stop_reason`; omission does not.
 
 A response that fails this does not cost the day. Omitted articles are recorded under
 `unaccounted`, conflicting claims are settled by stated precedence, and every resolution is
-listed in the selection's `anomalies`. The invariant is that nothing is lost *silently*;
+listed in the selection's `anomalies`. The invariant is that nothing is lost _silently_;
 losing a whole day's feed to one confused index would be the worse failure. The same check
-run over the *output* is a different matter: if selection itself drops or double-counts a
+run over the _output_ is a different matter: if selection itself drops or double-counts a
 candidate, that is a bug here and it raises.
 
 **Adjustments are ±1.** On a 0–3 scale a ±2 adjustment is two-thirds of the consequence
@@ -531,25 +531,25 @@ one every reader is certain to show.
 
 Each with the signal that would justify building it.
 
-| Deferred                                      | Trigger                                                                                                                                                                                                                                    |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Code-side clustering, request batching        | Truncation, or score drift on the shuffle-stability check                                                                                                                                                                                  |
-| Full-text fetch and reading-effort scoring    | Long articles keep winning slots                                                                                                                                                                                                           |
-| LLM-written rationales                        | Template phrasing proves too mechanical to skim                                                                                                                                                                                            |
-| Topic and source caps                         | An actual monoculture day                                                                                                                                                                                                                  |
-| Log-scaled recurrence bonus                   | Linear scaling (§2.3) proves miscalibrated at the tails once enough real `independent_sources` data accumulates in `state/*/response/*.json` to compare against                                                                          |
-| Dropping the recurrence adjustment            | It correlates with, and can double-count, `consequence` rather than measuring something independent. The downside: it's also a hedge against a single article's consequence being misjudged, via independent corroboration — dropping it loses that check. Revisit if disabling it on `general` doesn't change selections much |
-| Feedback loop from read/saved signals         | Not possible on Feedly Free; would require moving reader                                                                                                                                                                                   |
-| Local model                                   | Only if protecting the policy document becomes the priority                                                                                                                                                                                |
-| Constrained decoding (`output_config.format`) | Once `Response.dropped` is a list of records rather than a map: free-form keys cannot satisfy the `additionalProperties: false` that structured outputs require, and the map is what makes a dropped article cost 2-3 tokens instead of 20 |
-| Durable storage for the corpus and the log    | The Actions cache is evicted often enough to notice. It is deliberately weak storage: losing it shortens a feed rather than resurfacing items, because an entry's id is the article URL                                                    |
-| WebSub push instead of waiting for a poll     | Feedly's several-hour poll stops being tolerable. It discloses nothing about the reader, but it puts the URL that is the whole privacy model into a third party's database, and buys hours on a feed that is read once a day               |
-| A custom domain in front of the Worker        | Only if the generated `workers.dev` hostname proves guessable in practice, or the host is swapped for one whose free tier rate-limits its default domain                                                                                   |
-| Several feeds from one Worker (D8)            | Enough runners to want one hostname and one index page; needs a fan-in job that re-renders every feed from its published log before each upload, so that a feed whose job failed is not deleted from the manifest                          |
-| Probing a duplicate group's members, and substituting a readable one for a gated representative (D9) | A day where a gated article had a readable duplicate. Design it **with** the duplicate-language preference in a runner's editorial policy, which is the other substitution within a group — that one is prompt-side and this one would be code-side, and the two can disagree about which member is graded |
-| Re-probing a stale verdict (D9)               | A paywall observably lifting on a source that matters                                                                                                                                                                                      |
-| Model-assisted detection of unmarked paywalls (D9) | Articles reaching the feed that turn out to be unreadable **and** carry no markup                                                                                                                                                     |
-| Reconciling a language preference with readability (D9) | A runner whose editorial policy prefers one language for a duplicate group, where that language's source is also the one that cannot be checked. The preference then routes picks to the least verifiable source, which is a policy question rather than a detection one — and it needs the duplicate probing above before it can be answered in code |
+| Deferred                                                                                             | Trigger                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code-side clustering, request batching                                                               | Truncation, or score drift on the shuffle-stability check                                                                                                                                                                                                                                                                                             |
+| Full-text fetch and reading-effort scoring                                                           | Long articles keep winning slots                                                                                                                                                                                                                                                                                                                      |
+| LLM-written rationales                                                                               | Template phrasing proves too mechanical to skim                                                                                                                                                                                                                                                                                                       |
+| Topic and source caps                                                                                | An actual monoculture day                                                                                                                                                                                                                                                                                                                             |
+| Log-scaled recurrence bonus                                                                          | Linear scaling (§2.3) proves miscalibrated at the tails once enough real `independent_sources` data accumulates in `state/*/response/*.json` to compare against                                                                                                                                                                                       |
+| Dropping the recurrence adjustment                                                                   | It correlates with, and can double-count, `consequence` rather than measuring something independent. The downside: it's also a hedge against a single article's consequence being misjudged, via independent corroboration — dropping it loses that check. Revisit if disabling it on `general` doesn't change selections much                        |
+| Feedback loop from read/saved signals                                                                | Not possible on Feedly Free; would require moving reader                                                                                                                                                                                                                                                                                              |
+| Local model                                                                                          | Only if protecting the policy document becomes the priority                                                                                                                                                                                                                                                                                           |
+| Constrained decoding (`output_config.format`)                                                        | Once `Response.dropped` is a list of records rather than a map: free-form keys cannot satisfy the `additionalProperties: false` that structured outputs require, and the map is what makes a dropped article cost 2-3 tokens instead of 20                                                                                                            |
+| Durable storage for the corpus and the log                                                           | The Actions cache is evicted often enough to notice. It is deliberately weak storage: losing it shortens a feed rather than resurfacing items, because an entry's id is the article URL                                                                                                                                                               |
+| WebSub push instead of waiting for a poll                                                            | Feedly's several-hour poll stops being tolerable. It discloses nothing about the reader, but it puts the URL that is the whole privacy model into a third party's database, and buys hours on a feed that is read once a day                                                                                                                          |
+| A custom domain in front of the Worker                                                               | Only if the generated `workers.dev` hostname proves guessable in practice, or the host is swapped for one whose free tier rate-limits its default domain                                                                                                                                                                                              |
+| Several feeds from one Worker (D8)                                                                   | Enough runners to want one hostname and one index page; needs a fan-in job that re-renders every feed from its published log before each upload, so that a feed whose job failed is not deleted from the manifest                                                                                                                                     |
+| Probing a duplicate group's members, and substituting a readable one for a gated representative (D9) | A day where a gated article had a readable duplicate. Design it **with** the duplicate-language preference in a runner's editorial policy, which is the other substitution within a group — that one is prompt-side and this one would be code-side, and the two can disagree about which member is graded                                            |
+| Re-probing a stale verdict (D9)                                                                      | A paywall observably lifting on a source that matters                                                                                                                                                                                                                                                                                                 |
+| Model-assisted detection of unmarked paywalls (D9)                                                   | Articles reaching the feed that turn out to be unreadable **and** carry no markup                                                                                                                                                                                                                                                                     |
+| Reconciling a language preference with readability (D9)                                              | A runner whose editorial policy prefers one language for a duplicate group, where that language's source is also the one that cannot be checked. The preference then routes picks to the least verifiable source, which is a policy question rather than a detection one — and it needs the duplicate probing above before it can be answered in code |
 
 ## Maintaining this document
 

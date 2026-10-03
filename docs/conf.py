@@ -95,7 +95,7 @@ def _on_source_read(app: Sphinx, docname: str, source: list[str]) -> None:
         source[0] = _rewrite_links(source[0], written_in=path, page=path)
 
 
-def _on_include_read(
+def _on_include_read(  # noqa: PLR0917 - the signature Sphinx calls it with
     app: Sphinx, relative_path: Path, parent_docname: str, content: list[str]
 ) -> None:
     written_in = (Path(app.srcdir) / relative_path).resolve()
