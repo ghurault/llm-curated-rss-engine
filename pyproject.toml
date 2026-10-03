@@ -29,13 +29,18 @@ dev = [
     "black",
     "ipykernel",
     "ipywidgets",
-    "pdoc",
     "pre-commit",
     "pytest",
     "pytest-cov",
     "ruff",
     "typos",
     "uv",
+]
+docs = [
+    "furo",
+    "myst-parser",
+    "sphinx",
+    "sphinx-autoapi",
 ]
 
 [project.scripts]

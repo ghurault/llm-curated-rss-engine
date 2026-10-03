@@ -87,7 +87,6 @@ These exist because this repository is a public engine, and each reader's config
 - `ruff-isort`: sort imports
 - `ruff-docformatter`: fix docstring style
 - `ruff-check`: ruff linter
-- `make-docs`: regenerate `pdoc` docs when `src` or `README.md` changes
 - `conventional-pre-commit` (commit-msg stage): enforce Conventional Commits message format
 
 **Environment**: All commands run inside the devcontainer, never on the host.

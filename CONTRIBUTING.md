@@ -93,7 +93,7 @@ An upgrade that needs one is a commit of its own.
 | ------------ | ------------------------------------------------- |
 | `make reqs`  | compile `requirements.txt` from `pyproject.toml`  |
 | `make deps`  | install pinned requirements and the local package |
-| `make docs`  | generate API documentation into `docs/api/`       |
+| `make docs`  | build the documentation into `docs/_build/html/`  |
 | `make tag`   | create and push the next version tag              |
 | `make clean` | delete caches and compiled files                  |
 | `make help`  | list all targets                                  |
