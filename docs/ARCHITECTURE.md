@@ -3,8 +3,9 @@
 Decision record. Explains *why* the system is shaped this way, so that changes are made
 deliberately rather than by accident.
 
-For how to run it, see `README.md`. For the ranking mechanics, `docs/scoring-spec.md`. For
-the editorial rules loaded into the prompt, a runner's `editorial-policy.md`.
+For how to run it, see `README.md`; for setting one up, `docs/SETUP.md`. For the ranking
+mechanics, `docs/scoring-spec.md`. For the editorial rules loaded into the prompt, a
+runner's `editorial-policy.md`.
 
 ---
 
@@ -20,9 +21,11 @@ Two facts shape nearly every decision below.
 not a filter. Recall does not matter; precision does. A wrong pick costs almost nothing,
 which is why the system can afford to be aggressive and simple.
 
-**The repo is private; the feed is public.** Feedly polls from its own servers, so the
-output must be reachable from the open internet. Privacy rests on an unguessable URL. The
-editorial policy and reading history never leave the private repo.
+**The configuration is private; the engine and the feed are public.** Feedly polls from
+its own servers, so the output must be reachable from the open internet. Privacy rests on
+an unguessable URL. The editorial policy, the subscriptions and the reading history live in
+a private configuration repository and never leave it; this one holds nothing about any
+reader (D10).
 
 ## Shape
 
@@ -184,8 +187,9 @@ The editorial policy retains the wording rule for that case.
 
 ## D6 — Build host and publish host are separate
 
-Actions runs in a private repo and deploys to an external static host. GitHub Pages on a
-private repo requires a paid plan, but nothing requires the feed to be served from GitHub.
+Actions runs in the private configuration repository and deploys to an external static
+host. GitHub Pages on a private repo requires a paid plan, but nothing requires the feed to
+be served from GitHub.
 
 This is what lets the sensitive material stay private while the feed stays public. Swapping
 the host is one class behind the `Deployer` protocol, alongside the default that publishes
@@ -249,8 +253,9 @@ provider with a different privacy property, is one class.
 ## D8 — A runner is a directory, and its config is what defines it
 
 `feeds/<name>/` holds one runner: a config, an editorial policy, a subscription
-list. The scheduled workflow runs a matrix over those directories, so a second feed
-is a directory and a line in that matrix rather than a second workflow or a fork.
+list. The configuration repository's scheduled workflow runs a matrix over those
+directories, so a second feed is a directory and a line in that matrix rather than a
+second workflow or a fork.
 
 **The config defines the runner; the directory names it.** Everything that makes one
 feed differ from another is in that file — what it reads, whose taste it applies,
@@ -262,9 +267,9 @@ it equalled the directory it sat in.
 **Nothing in `src/` knows there is more than one.** Paths resolve relative to the
 config file, so the partition is entirely in what each config declares. That is why
 `state/`, `eval/corpus/` and `build/` gain a subdirectory per runner, rather than
-each runner directory gaining a state directory: `feeds/` stays committed whole,
-which makes it the boundary between the engine and the instance, and makes adding a
-feed by copying a directory safe — there is no runtime data to copy by accident.
+each runner directory gaining a state directory: `feeds/` stays committed whole in
+the configuration repository, which makes adding a feed by copying a directory safe —
+there is no runtime data to copy by accident.
 
 The price is that two runners *could* name one state directory, and nothing would
 say so: they would append to a single published log and upload each over the other,
@@ -291,9 +296,9 @@ to both sees it twice. Collapsing across runners would couple them — one runne
 fetch would have to know what another had published — so the answer is to keep the
 source lists mostly disjoint and accept the overlap.
 
-**Subscription lists are committed.** They were kept out of the repository when it
-was still possible the repository would be split into a public engine and a private
-instance. `feeds/` is now that split, so for a private repo the reason has expired,
+**Subscription lists are committed** to the configuration repository. They were kept
+out of git while engine and configuration still shared a repository that might one day
+be published. The split (D10) put them on the private side, so the reason has expired,
 and dropping it ends a copy: CI read each list from a secret that had to be
 re-pasted whenever a subscription changed, and a stale one silently curated the
 subscriptions of setup day.
@@ -375,6 +380,38 @@ reading-effort scoring" deferred below. It looks at the markup and throws the bo
   so there is no logged-in case to support.
 - **No re-probing**, and **no probing of duplicate members** — only the graded representative
   of a group is checked. Both are deferred below.
+
+## D10 — The engine is public, the configuration is private, and an image joins them
+
+Two repositories, because they hold two things with different owners and lifetimes. This
+one is the engine: the package, its tests, the scoring prompt and both templates, and
+nothing that describes a reader. A configuration repository holds one reader's runners
+(`feeds/`), their evaluation notes, the Actions cache carrying the corpus and the
+published log, and the workflow that runs them on a schedule. It is private because
+`editorial-policy.md` is the most disclosive artifact in the project.
+
+One repository meant one visibility setting for both: the engine could not be published
+while a policy shared its history, and a second reader could not run the pipeline without
+forking the first reader's taste along with it.
+
+**The engine is consumed as an image pinned by digest, never `latest`.** `image.yml`
+publishes from `main`; `curate.yml` pins one digest, and a caller pins `curate.yml` by
+commit. An unattended run therefore changes behaviour only when its caller moves that
+commit. Before the split, an upgrade was whatever `main` happened to be the next morning.
+
+**The caller owns the clock, the matrix, the secrets and the cache.** `curate.yml` runs one
+runner's day and nothing more: a reusable workflow cannot matrix itself, and the cache
+belongs to the calling repository, which keeps each reader's corpus in their own. What
+`curate.yml` accepts — its inputs, its secret names, the `feeds/<name>/` layout and the cache
+paths — is the contract with every caller, so changing any of it is a breaking release.
+
+**What the engine ships is what is contractual.** The scoring prompt and both templates are
+in the package (D8), so a configuration repository needs nothing from this one but the
+image: `curate-template` prints the references, and `curate-validate` stands in for the test
+suite it does not have.
+
+**The engine's history starts at the split.** The alternative was auditing every past
+revision for policy content, and no historical commit was worth that.
 
 ---
 

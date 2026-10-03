@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "curated-feed"
-description = "Collect RSS items into a local corpus for editorial-policy evaluation."
+description = "Curate RSS feeds with an LLM scoring each day's articles against a written editorial policy."
 authors = [
     { name = "Guillem Hurault" },
 ]

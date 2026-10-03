@@ -68,10 +68,10 @@ You are an expert Python developer.
 
 ## 6. Project Constraints
 
-These exist because the repository splits into a public engine and a private instance: `feeds/` is the instance, and everything else is the engine.
+These exist because this repository is a public engine, and each reader's configuration lives in a private repository of their own (`docs/ARCHITECTURE.md`, D10).
 
 - **No paths in code**: No path under `feeds/` or `eval/` is hardcoded in `src/`. Locations come from a runner's `config.toml` or from CLI arguments, resolved relative to the config file. This is what makes one instance run several feeds: nothing in `src/` knows there is more than one.
-- **Nothing personal**: No feed URLs, topics, employer or personal names in code, defaults, test fixtures or documentation. They belong in `feeds/<name>/`, which is committed because the repository is private, and in `eval/`, which is gitignored. Documentation says `feeds/<name>/` rather than naming a real runner; the workflow's matrix is the one exception, since it has to.
+- **Nothing personal**: No feed URLs, topics, employer or personal names in code, defaults, test fixtures or documentation. They belong in a configuration repository. Documentation says `feeds/<name>/` rather than naming a real runner.
 - **The record schema is a contract**: the fields, their order and their meaning are consumed by later phases and by manual evaluation sessions. Changing them is a deliberate, discussed act, not a refactor.
 - **Only the policy documents reach the model**: a runner's `editorial-policy.md` is loaded at runtime and `src/curated_feed/prompt.md` ships with the package; the two are assembled into the prompt. `docs/scoring-spec.md` never is — the score floor, the item cap and the assembly rules are withheld from the model deliberately, so code that puts them in a prompt breaks the design.
 - **The provider is behind a protocol**: scoring goes through `Scorer`. Only `claude.py` imports the Anthropic SDK, and `score.py` imports it lazily; nothing else may assume which provider is configured. The offline backends (`stub`, `file`) stay — they are how the pipeline is tested and how a feed is proved in a reader without spending.

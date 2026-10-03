@@ -15,9 +15,3 @@ extend-ignore-re = [
 [default.extend-words]
 # e.g. `word = "word"`
 hsa = "hsa" # HubSpot ad-tracking query parameter prefix, not a typo of "has"
-sur = "sur"
-
-# Subscription lists are committed (see docs/ARCHITECTURE.md D8) and are other
-# people's spelling: publication names, foreign-language titles, abbreviations.
-[files]
-extend-exclude = ["feeds/*/sources.opml"]

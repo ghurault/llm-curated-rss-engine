@@ -9,10 +9,12 @@
 #   3. generate a Worker name and path segment:
 #        python -c "import secrets; print(secrets.token_hex(4), secrets.token_hex(8))"
 #      and set [deploy] project and [publish] site_url from the first
-#   4. add <name> to the matrix in .github/workflows/daily.yml
+#   4. add <name> to the matrix of the workflow that calls the engine's
+#      curate.yml, and to its dispatch options
 #
 # Nothing needs creating at the host: the first upload creates the Worker under
-# the name below. See docs/SETUP.md.
+# the name below. The whole sequence, with the workflow itself:
+# https://github.com/ghurault/llm-curated-rss-engine/blob/main/docs/SETUP.md
 #
 # Paths are resolved relative to this file, so commands work from any directory.
 # Every value here can be overridden by a command-line flag.

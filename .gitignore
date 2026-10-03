@@ -219,13 +219,5 @@ __marimo__/
 
 #### Custom
 
-# What a runner produced stays local. The contents of eval/corpus/ and
-# eval/labels/ are ignored by a .gitignore inside each of those directories,
-# next to what they ignore, and both hold one subdirectory per runner.
-#
-# feeds/ is the exception: it is committed whole, subscription lists included.
-# The repository is private, and the alternative — a copy of each list in a CI
-# secret — was a copy to keep in step. See docs/ARCHITECTURE.md D8.
-
 # Local overrides of committed configuration.
 config.local.toml

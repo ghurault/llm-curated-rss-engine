@@ -1,7 +1,7 @@
 # Contributing
 
 Everything runs inside the devcontainer.
-It is a development environment and nothing else: the scheduled run and the upload happen in CI, on a runner that brings its own toolchain, which is why the image is free to carry the test and lint tooling outright.
+It is a development environment and nothing else: the scheduled run and the upload happen in CI, from the `runtime` stage of the same `Dockerfile`, which is why the `devcontainer` stage is free to carry the test and lint tooling outright.
 
 ## Setup
 
@@ -29,37 +29,43 @@ It is the same `.pre-commit-config.yaml`, so a commit that got through locally g
 [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs `pytest` alongside it, against `requirements.txt` rather than `requirements-dev.txt`.
 That is the one check the devcontainer cannot reproduce, because the image installs the development set: a module in `src/` that imports something only a development extra provides passes locally and fails there.
 
-[`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs `curate-validate feeds/`, which `pytest` already covers here.
-It is a prototype of the gate the configuration repository will own once the two are split, where there is no test suite beside the runners and that command is the whole of it.
-It carries no secret and resolves no feed, which is what lets it be that gate.
-
-[`.github/workflows/image.yml`](.github/workflows/image.yml) builds the `Dockerfile` and runs a day inside it with the network switched off, publishing nothing.
-It is the other prototype: the engine reaches the configuration repository as an image pinned by digest, and every failure mode of that lives in the build rather than in the code.
+[`.github/workflows/image.yml`](.github/workflows/image.yml) builds the `Dockerfile` and runs a day inside it with the network switched off, and on `main` publishes it to GHCR.
+The engine reaches every configuration repository as that image, and every failure mode of that lives in the build rather than in the code, which is why a pull request builds it too.
 
 ## Conventions
 
 The full conventions are in [.github/copilot-instructions.md](.github/copilot-instructions.md), which is the single source of truth whichever assistant is being used.
 Three of them shape most review comments:
 
-- **Nothing personal in code, defaults, test fixtures or documentation.** Feed URLs and topics belong in `feeds/<name>/`, which is committed because the repository is private, and in `eval/`, which is gitignored.
+- **Nothing personal in code, defaults, test fixtures or documentation.** This repository is public; feed URLs and topics belong in a configuration repository.
 - **Only the policy documents reach the model.** A runner's `editorial-policy.md` is loaded at runtime and `src/curated_feed/prompt.md` ships with the package; `docs/scoring-spec.md` never is.
 - **Only CI publishes.** `curate-run` stops at `build/` unless `--deploy` is given, and the devcontainer holds no deploy credential. Tests may exercise the deploy stage but must never run a command: inject the runner, as `tests/test_deploy.py` does.
 
 The version comes from annotated git tags via `setuptools_scm`, following [semantic versioning](https://semver.org/), and commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), enforced by pre-commit.
 
+## Releasing to configuration repositories
+
+Every merge to `main` publishes an image, tagged with its version, `sha-<commit>` and `latest`.
+None of that reaches a configuration repository by itself, which is the point (`docs/ARCHITECTURE.md`, D10):
+
+1. Copy the digest from the summary of that `image` run into the `container:` line of [`curate.yml`](.github/workflows/curate.yml), in a pull request of its own.
+2. Each configuration repository moves its `uses: …/curate.yml@<commit>` to the commit that merged it, whenever it chooses to.
+
+What `curate.yml` accepts — its inputs, its secret names, the `feeds/<name>/` layout and the cache paths — is what every caller depends on.
+Changing any of it is a breaking release, and the cache paths especially: a caller whose paths move loses its corpus and published log without an error.
+
 ## Where things are written down
 
-| Document                           | Holds                                                        | Read it when                    |
-| ---------------------------------- | ------------------------------------------------------------ | ------------------------------- |
-| `README.md`                        | how to run it                                                | using the thing                 |
-| `docs/SETUP.md`                    | how to get it running the first time                         | setting it up, or re-setting it |
-| `docs/ARCHITECTURE.md`             | why it is shaped this way, the contracts, and the invariants | changing how it works           |
-| `docs/scoring-spec.md`             | the ranking mechanics as implemented                         | changing `select.py`            |
-| `src/curated_feed/prompt.md`       | how the model is told to judge an article                    | changing what the model returns |
-| `feeds/<name>/config.toml`         | one runner: its sources, its policy, its model, its Worker   | adding a feed, or changing one  |
-| `feeds/<name>/editorial-policy.md` | what that feed's reader cares about                          | changing taste                  |
-| `.github/workflows/daily.yml`      | the schedule, the matrix and the credentials                 | adding a feed, or its timing    |
-| `.github/workflows/curate.yml`     | what one runner's day does, and what it needs                | changing how it is published    |
+| Document                                        | Holds                                                        | Read it when                    |
+| ----------------------------------------------- | ------------------------------------------------------------ | ------------------------------- |
+| `README.md`                                     | how to run it                                                | using the thing                 |
+| `docs/SETUP.md`                                 | how to get it running the first time                         | setting it up, or re-setting it |
+| `docs/ARCHITECTURE.md`                          | why it is shaped this way, the contracts, and the invariants | changing how it works           |
+| `docs/scoring-spec.md`                          | the ranking mechanics as implemented                         | changing `select.py`            |
+| `src/curated_feed/prompt.md`                    | how the model is told to judge an article                    | changing what the model returns |
+| `src/curated_feed/config.template.toml`         | every setting a runner can have, annotated                   | adding or changing a setting    |
+| `src/curated_feed/editorial-policy.template.md` | the shape of a policy, and what the prompt relies on in it   | changing how a policy is read   |
+| `.github/workflows/curate.yml`                  | what one runner's day does, and what callers depend on       | changing how it is published    |
 
 ## Managing requirements
 
