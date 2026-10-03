@@ -32,4 +32,26 @@ repos:
       - id: check-yaml
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+  - repo: https://github.com/reteps/dockerfmt
+    rev: v0.5.4
+    hooks:
+      - id: dockerfmt
+  # Installed in the devcontainer, not by pre-commit, so quality.yml skips them.
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: prettier --write
+        language: system
+        files: \.(json|jsonc|md|ya?ml)$
+      - id: taplo
+        name: taplo
+        entry: taplo format
+        language: system
+        types: [toml]
+      - id: shfmt
+        name: shfmt
+        entry: shfmt -w
+        language: system
+        types: [shell]
 default_install_hook_types: [pre-commit, commit-msg]
