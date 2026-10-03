@@ -38,12 +38,7 @@ jobs:
 
       - run: pip install pre-commit
 
-      # make-docs is skipped: it regenerates docs/api/, which is gitignored, and
-      # would need pdoc and the package installed to say nothing about the diff.
-      #
       # conventional-pre-commit needs no skipping — it runs at the commit-msg
       # stage, and --all-files runs the pre-commit stage.
       - name: Run every hook
-        env:
-          SKIP: make-docs
         run: pre-commit run --all-files --show-diff-on-failure --color=always

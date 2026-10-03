@@ -20,10 +20,10 @@ deps:
 init: deps
 	pre-commit install
 
-## Generate API documentation
+## Build the documentation into docs/_build/html/
 .PHONY: docs
 docs:
-	pdoc --docformat google -o docs/api/ curated_feed
+	sphinx-build -b html docs docs/_build/html -W --keep-going
 
 ## Increment git tag
 .PHONY: tag
@@ -38,6 +38,7 @@ clean:
 	rm -rf .pytest_cache
 	rm -rf .ruff_cache
 	rm -rf ./src/*.egg-info
+	rm -rf docs/_build
 
 ## Show this help message
 .PHONY: help

@@ -25,12 +25,4 @@ repos:
     rev: v1.43.4
     hooks:
       - id: typos
-  - repo: local
-    hooks:
-      - id: make-docs
-        name: make-docs
-        entry: bash -c 'make docs'
-        language: system
-        types: [file]
-        files: ^(src\/|README\.md$)
 default_install_hook_types: [pre-commit, commit-msg]
