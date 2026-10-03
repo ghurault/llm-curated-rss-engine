@@ -6,3 +6,5 @@ array_trailing_comma = true
 array_auto_collapse = false
 reorder_arrays = true
 column_width = 100
+# Without it the CLI indents by 2 and VS Code by its tab size, so they disagree.
+indent_string = "    "
