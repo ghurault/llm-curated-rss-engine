@@ -87,6 +87,9 @@ These exist because this repository is a public engine, and each reader's config
 - `ruff-isort`: sort imports
 - `ruff-docformatter`: fix docstring style
 - `ruff-check`: ruff linter
+- `check-toml`, `check-yaml`, `check-executables-have-shebangs`, `check-shebang-scripts-are-executable`: file sanity checks
+- `dockerfmt`, `prettier`, `taplo`, `shfmt`: format the other languages (see §8)
+- `hadolint`, `shellcheck`: lint the `Dockerfile` and shell scripts
 - `conventional-pre-commit` (commit-msg stage): enforce Conventional Commits message format
 
 **Environment**: All commands run inside the devcontainer, never on the host.
@@ -94,10 +97,11 @@ Dependencies are declared in `pyproject.toml` and pinned by `make reqs` into `re
 
 ## 8. Other Languages
 
-Formatters per language are configured in `.vscode/settings.json`; write code so it needs no reformatting once that formatter runs.
+Formatters per language run on save in VS Code (`.vscode/settings.json`) and as pre-commit hooks; write code so it needs no reformatting once that formatter runs.
 
 - **JSON / JSONC / YAML**: Formatted with Prettier.
 - **Markdown**: Formatted with Prettier.
   - _Line breaks_: Never break a line in the middle of a sentence. Prefer to write each sentence (or clause, if long) on its own line.
-- **Shell scripts**: Formatted with `shfmt`.
-- **TOML**: Formatted with the `even-better-toml` extension (`taplo`).
+- **Shell scripts**: Formatted with `shfmt` (options from `.editorconfig`), linted with `shellcheck`.
+- **TOML**: Formatted with `taplo` (the `even-better-toml` extension in the editor), configured by `taplo.toml`.
+- **Dockerfile**: Formatted with `dockerfmt`, linted with `hadolint`.
