@@ -32,6 +32,8 @@ That is the one check the devcontainer cannot reproduce, because the image insta
 [`.github/workflows/image.yml`](.github/workflows/image.yml) builds the `Dockerfile` and runs a day inside it with the network switched off, and on `main` publishes it to GHCR.
 The engine reaches every configuration repository as that image, and every failure mode of that lives in the build rather than in the code, which is why a pull request builds it too.
 
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml) runs `make docs`, which treats every Sphinx warning as an error, so a broken link fails the pull request that made it; on `main` it publishes the site to GitHub Pages.
+
 ## Conventions
 
 The full conventions are in [.github/copilot-instructions.md](.github/copilot-instructions.md), which is the single source of truth whichever assistant is being used.
