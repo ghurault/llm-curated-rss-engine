@@ -35,8 +35,8 @@ echo "Building a runner in $work"
 
 # From the templates the engine ships, so that this fails when they stop
 # travelling in the wheel — which is the failure a checkout can never see.
-curate-template config >"$work/config.toml"
-curate-template policy >"$work/editorial-policy.md"
+curate-template config > "$work/config.toml"
+curate-template policy > "$work/editorial-policy.md"
 
 # Three edits, and each one is what the template asks a new runner to decide.
 # Everything written stays inside this directory, and no host is named: with
@@ -49,7 +49,7 @@ sed -i \
   -e 's|^provider = "wrangler"$|provider = "none"|' \
   "$work/config.toml"
 
-cat >"$work/sources.opml" <<'OPML'
+cat > "$work/sources.opml" << 'OPML'
 <?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head><title>smoke</title></head>
@@ -62,7 +62,7 @@ OPML
 # A collection day, written by the engine's own writer rather than by a heredoc:
 # the corpus record schema is fixed (see models.Candidate) and a fixture that
 # spelled it out here would be a second copy of it to keep in step.
-python - "$work" <<'PY'
+python - "$work" << 'PY'
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path

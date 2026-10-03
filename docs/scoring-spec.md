@@ -11,11 +11,11 @@ knows there are ten slots fills them, and one that knows the floor pre-filters a
 Handing this document to a chat session by hand is a different matter — that is what Phase 0
 did, and it still works.
 
-| Section                                       | Produced by                               |
-| --------------------------------------------- | ----------------------------------------- |
+| Section                                       | Produced by                                         |
+| --------------------------------------------- | --------------------------------------------------- |
 | §2.1 consequence, §2.2 topics matched         | the model, prompted by `src/curated_feed/prompt.md` |
-| §2.3 the judgements behind each adjustment    | the model                                 |
-| §2 arithmetic, §2.3 weights, §3 floor, §5, §6 | `select.py`                               |
+| §2.3 the judgements behind each adjustment    | the model                                           |
+| §2 arithmetic, §2.3 weights, §3 floor, §5, §6 | `select.py`                                         |
 
 A runner's editorial policy numbers its own sections however it likes, so this
 document names its parts — the topic list, the hard exclusions, the penalties —
@@ -134,17 +134,17 @@ Distinct stories on the same subject, or several stories from one outlet, may al
 
 The selection record, one per selected article, written by `select.py`:
 
-| Field           | Notes                                                 |
-| --------------- | ----------------------------------------------------- |
-| `id`            | from the candidate record                             |
-| `rank`          | 1 = highest                                           |
-| `consequence`   | 0–3                                                   |
-| `preference`    | 0/1/2/3, with topics matched                          |
+| Field           | Notes                                                       |
+| --------------- | ----------------------------------------------------------- |
+| `id`            | from the candidate record                                   |
+| `rank`          | 1 = highest                                                 |
+| `consequence`   | 0–3                                                         |
+| `preference`    | 0/1/2/3, with topics matched                                |
 | `adjustments`   | e.g. `recurrence +0.5`, `staleness −1`, `penalty:chrome −1` |
-| `score`         | final                                                 |
-| `discretionary` | true/false                                            |
-| `rationale`     | published text — see below                            |
-| `duplicates`    | ids collapsed into this item                          |
+| `score`         | final                                                       |
+| `discretionary` | true/false                                                  |
+| `rationale`     | published text — see below                                  |
+| `duplicates`    | ids collapsed into this item                                |
 
 **The rationale is built in code, with one exception.**
 It reports consequence, the preference count, and any of the fixed adjustments — recurrence, staleness — that applied.

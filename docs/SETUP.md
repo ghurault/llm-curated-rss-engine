@@ -86,6 +86,7 @@ engine curate-template policy > feeds/<name>/editorial-policy.md
 
 Read the comment block at the top before deleting it, because nothing validates the policy.
 The prompt depends on two conventions:
+
 - a rule's name is its bolded bullet heading;
 - the policy says which wins when an exclusion and a topic collide.
 
@@ -110,6 +111,7 @@ engine curate-run --config feeds/<name>/config.toml --date 2026-08-08 --provider
 
 The stub scorer calls nothing.
 Serve `build/<name>/` anywhere your reader can reach (step 9 is one way), subscribe to it, and check two things:
+
 - items appear once, in order;
 - they don't come back as unread after a second run.
 
@@ -262,16 +264,16 @@ Comment out the `schedule` until the policy is worth paying for.
 
 ## When something is wrong
 
-| symptom                                     | likely cause                                                                           |
-| ------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Every item shows as unread again            | `site_url` or `path_prefix` changed after publishing                                   |
-| The run succeeded but nothing was uploaded  | the feed has not changed since the last upload; `curate-deploy --force` overrides      |
-| The first CI upload hangs                   | wrangler is prompting; the job log shows for what                                      |
-| "OPML file not found"                       | `sources.opml` was never committed, or `[paths] sources` points elsewhere              |
-| A command run by hand cannot find a file    | it was run below the repository root, outside the `engine` mount                       |
-| CI curates feeds you have unsubscribed from | the committed `sources.opml` is stale; re-export it                                    |
-| CI fails on a rejected credential           | the secrets are in an environment, not on the repository                               |
-| One feed publishes another's items          | two runners share a `state_dir`, `build_dir` or Worker; `curate-validate` says which   |
-| One feed stops updating                     | its job failed on its own; read that job's log                                         |
-| A shorter feed after a CI outage            | the Actions cache was evicted; it refills, and nothing already read comes back         |
-| `curate-score` exits non-zero               | the answer failed validation twice; the raw text is in `state/<name>/response/`        |
+| symptom                                     | likely cause                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Every item shows as unread again            | `site_url` or `path_prefix` changed after publishing                                 |
+| The run succeeded but nothing was uploaded  | the feed has not changed since the last upload; `curate-deploy --force` overrides    |
+| The first CI upload hangs                   | wrangler is prompting; the job log shows for what                                    |
+| "OPML file not found"                       | `sources.opml` was never committed, or `[paths] sources` points elsewhere            |
+| A command run by hand cannot find a file    | it was run below the repository root, outside the `engine` mount                     |
+| CI curates feeds you have unsubscribed from | the committed `sources.opml` is stale; re-export it                                  |
+| CI fails on a rejected credential           | the secrets are in an environment, not on the repository                             |
+| One feed publishes another's items          | two runners share a `state_dir`, `build_dir` or Worker; `curate-validate` says which |
+| One feed stops updating                     | its job failed on its own; read that job's log                                       |
+| A shorter feed after a CI outage            | the Actions cache was evicted; it refills, and nothing already read comes back       |
+| `curate-score` exits non-zero               | the answer failed validation twice; the raw text is in `state/<name>/response/`      |

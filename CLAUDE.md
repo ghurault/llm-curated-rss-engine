@@ -13,7 +13,7 @@ Nothing here repeats [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (why it is sha
 - Ask clarifying questions before building rather than guessing; the user prefers a question to a rework.
 - Tests come before the implementation, and never touch the network or a model. Every external dependency in `src/` is injected for exactly that reason — the Anthropic client in `claude.py` (default from `build_client`), the HTTP client in `fetch.py` (`build_client`), the command runner in `deploy.py`. `tests/test_integration.py` substitutes the first two and runs the whole chain; every fixture host is under `.invalid`, so a substitution that fails to take fails the test.
 - Flag a deviation from a design document explicitly instead of quietly implementing something better.
-- **Comments earn their place**, in configuration files above all. `.github/copilot-instructions.md` asks for concision everywhere, and the failure mode here is a `Dockerfile`, a workflow or a `devcontainer.json` annotated line by line: long enough that none of it gets read. One line for the non-obvious *why*, and nothing for what the line already says.
+- **Comments earn their place**, in configuration files above all. `.github/copilot-instructions.md` asks for concision everywhere, and the failure mode here is a `Dockerfile`, a workflow or a `devcontainer.json` annotated line by line: long enough that none of it gets read. One line for the non-obvious _why_, and nothing for what the line already says.
 
 ## Container gotchas
 
