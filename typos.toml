@@ -15,4 +15,3 @@ extend-ignore-re = [
 [default.extend-words]
 # e.g. `word = "word"`
 hsa = "hsa" # HubSpot ad-tracking query parameter prefix, not a typo of "has"
-sur = "sur"
