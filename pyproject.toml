@@ -151,6 +151,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "--color=yes",
+    "--cov-branch",
     "--cov-report=term-missing",
     "--cov=curated_feed",
     "--cov=tests",
