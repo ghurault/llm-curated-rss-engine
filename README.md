@@ -29,6 +29,9 @@ One instance curates as many feeds as you like — each is a directory under `fe
 My use case is not to outsource the decision to read an article to AI, but rather for AI to identify articles that I would most be interested in.
 I subscribe to the curated feed in my RSS reader **alongside** the raw subscriptions, so it is a highlights lane rather than a filter.
 
+This repository is the engine, and holds nothing about any reader.
+Your feeds live in a private configuration repository of your own, which runs the engine's published image on a schedule and chooses when to take a new release — [docs/SETUP.md](docs/SETUP.md) builds one from scratch.
+
 ## Features
 
 - 🧮 **Built-in scoring system, reusable across feeds**: consequence (impact/importance of an article), topic preference and adjustments combine into one score, with a floor and a hard cap on how many articles are ever published in a day (see [docs/scoring-spec.md](docs/scoring-spec.md)).
@@ -39,21 +42,21 @@ I subscribe to the curated feed in my RSS reader **alongside** the raw subscript
 - 📚 **Multiple feeds from one instance**: each runner has its own sources, policy and published URL, scheduled independently.
 - 🤖 **Supported AI providers**: Claude (API).
 - ☁️ **Supported host providers**: Cloudflare Workers (free): static asset hosting, no build pipeline needed.
-- ⚙️ **Automation via GitHub Actions (free)**: one scheduled job per feed, daily.
+- ⚙️ **Automation via GitHub Actions (free)**: one scheduled job per feed, daily, through a reusable workflow your configuration repository pins to an exact engine release.
 - 💸 **Change-aware deploys**: an unchanged feed isn't re-uploaded, so a quiet day costs nothing.
 - 📝 **Optional selection rationale**: add a short, model-free explanation of why an article was picked to its description.
 
 ## Privacy
 
-This application was designed to be privacy-conscious, and nearly everything below rests on one assumption: **the repository stays private.** From that starting point, here is what each part of the system can see:
+This application was designed to be privacy-conscious, and nearly everything below rests on one assumption: **your configuration repository stays private.** From that starting point, here is what each part of the system can see:
 
 - **Sources** — indirectly reveal your preferences, since subscribing to a feed is itself a signal.
   - Sent to the AI model on every run — see below, this is where most of the risk lies.
-  - At rest, stored in a private repository.
+  - At rest, stored in your private configuration repository.
   - Per-_published_ article, the source feed's name appears in that entry's `<author>` — the full subscription list is never exposed, only the source of whatever gets selected.
-- **Editorial policy** — reveals what you care about directly, and is the most sensitive document in the repository.
+- **Editorial policy** — reveals what you care about directly, and is the most sensitive document in the project.
   - Sent to the AI model on every run.
-  - At rest, intended to be stored in a private repository.
+  - At rest, intended to be stored in your private configuration repository.
   - The published rationale can't leak it: it's built in code from the independent-source count alone, never from model output. Matched topics — the one piece of model output that _would_ leak the policy — are deliberately kept out of the feed and stay in the private selection log instead (`docs/ARCHITECTURE.md`, D5).
 - **Model provider** — sees both documents above, and therefore learns your preferences. See ["What leaves the machine"](#scoring-with-claude) for what specifically is sent and Anthropic's training policy on it.
   - The provider is a seam, not a hard dependency (`docs/ARCHITECTURE.md`, D7): swapping to a self-hosted model is one class away, not a rewrite.
@@ -71,16 +74,6 @@ That's not what's implemented here for convenience, but the architecture doesn't
 ## Layout
 
 ```text
-├── feeds/                       one runner per curated feed (your data)
-│   └── <name>/
-│       ├── config.toml          what this feed reads, spends and publishes to
-│       ├── editorial-policy.md  what you care about, written by hand
-│       └── sources.opml         subscription list exported from your feed reader
-├── eval/
-│   ├── corpus/<name>/           one JSONL file per collection day
-│   └── labels/<name>/           your notes on how good the picks were
-├── state/<name>/                what each stage produced, one file per day (your data)
-├── build/<name>/                the feed, ready to upload (git ignored)
 ├── src/curated_feed/            the package
 │   ├── prompt.md                how to judge an article, shipped with the engine
 │   ├── config.template.toml     the annotated settings reference, and what to copy
@@ -90,8 +83,12 @@ That's not what's implemented here for convenience, but the architecture doesn't
 │   ├── ARCHITECTURE.md          why it is shaped this way, and the contracts
 │   ├── scoring-spec.md          how judgements become a ranking
 │   └── api/                     generated API reference (git ignored)
-├── .github/workflows/           the scheduled run, and the only thing that publishes
+├── .github/workflows/
+│   ├── curate.yml               one feed's day, called by a configuration repository
+│   └── image.yml                builds, exercises and publishes the image
+├── tests/                       never touch the network or a model
 ├── scripts/                     utility scripts
+├── Dockerfile                   the image the pipeline runs from, and the devcontainer
 ├── CONTRIBUTING.md              running the checks and the conventions
 ├── pyproject.toml               package, dependencies and tool configuration
 ├── requirements.txt             pinned application dependencies (generated)
@@ -99,8 +96,7 @@ That's not what's implemented here for convenience, but the architecture doesn't
 └── Makefile                     common tasks
 ```
 
-`eval/corpus/`, `eval/labels/` and `state/` hold personal data and are gitignored — the directories are tracked, their contents are not.
-`feeds/` is committed whole, subscription lists included: the repository is private, and the alternative was a copy of every list in a CI secret to keep in step (`docs/ARCHITECTURE.md`, D8).
+A configuration repository's own layout — `feeds/`, `eval/`, `state/` and the workflow that calls `curate.yml` — is step 1 of [docs/SETUP.md](docs/SETUP.md).
 
 `docs/scoring-spec.md` is the ranking specification: the scales, the arithmetic, the score floor, the assembly order and the rejects log.
 It is written for whoever changes the selection code, and is deliberately **never** loaded into a prompt — the model is not told the floor or the item cap, because knowing them would only tempt it to pre-filter or pad.
@@ -111,13 +107,14 @@ The first ships with the package and no `config.toml` can name it: its response 
 
 ## Getting started
 
-Setting one up is a one-time sequence of its own, and it lives in **[docs/SETUP.md](docs/SETUP.md)** — devcontainer, subscription list, editorial policy, API key, the random name the feed is served from, the Cloudflare Worker, the repository secrets, and the schedule.
+Setting one up is a one-time sequence of its own, and it lives in **[docs/SETUP.md](docs/SETUP.md)** — your configuration repository, the engine's image, subscription list, editorial policy, API key, the random name the feed is served from, the Cloudflare Worker, the repository secrets, and the schedule.
 Everything below assumes that is done.
 
 **No key is stored in this repository** — credentials are resolved from the environment, and the two offline scoring providers (`stub`, `file`) need none at all.
 
 ## Running it
 
+Commands are shown bare, as an installed package provides them; from the image, prefix each one as in step 2 of [docs/SETUP.md](docs/SETUP.md).
 A runner is chosen by pointing at its config, and there is no default:
 
 ```bash
@@ -125,7 +122,7 @@ curate-fetch --config feeds/<name>/config.toml   # collect today into that feed'
 curate-run --config feeds/<name>/config.toml     # today, end to end, stopping at build/
 ```
 
-`--config` is found the usual way when it is left out, by searching upwards for a `config.toml`, so `cd feeds/<name>` and then plain `curate-run` works as well.
+`--config` is found the usual way when it is left out, by searching upwards for a `config.toml`, so with an installed package `cd feeds/<name>` and then plain `curate-run` works as well — though not through the image, which sees only the directory it was started in.
 What no longer works is a bare command from the repository root: with nothing to find, it says so rather than picking a feed for you.
 
 `curate-fetch` keeps items published within the lookback window (default 2 days) and ends with a summary: feeds attempted, succeeded, failed and why, and items written.
@@ -141,9 +138,8 @@ The point of stage boundaries being files is that a past day can be re-run witho
 How far back you start depends on what you changed:
 
 ```bash
-cd feeds/<name>
-curate-run --date 2026-08-08 --from select      # after changing a weight or the item cap
-curate-run --date 2026-08-08 --from score …     # after editing the policy: needs a fresh answer
+curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from select    # after changing a weight or the item cap
+curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from score …   # after editing the policy: needs a fresh answer
 ```
 
 Editing a runner's `editorial-policy.md` changes what the model is asked, so it needs a new response.
@@ -191,12 +187,12 @@ build/<name>/<path_prefix>/index.html
 
 One build directory per runner, and one Worker per runner — an upload replaces a Worker's whole asset manifest, so two feeds sharing one would each delete the other (`docs/ARCHITECTURE.md`, D8).
 
-The reference host is a [Cloudflare Worker serving static assets](https://developers.cloudflare.com/workers/static-assets/) on the free plan, not Cloudflare Pages, which mints a new public `<hash>.<project>.pages.dev` address on every deployment — a bad fit for a feed whose privacy is its URL. Nothing needs creating at the host beforehand: the first upload creates the Worker under the name in the runner's config (steps 7–8 of [docs/SETUP.md](docs/SETUP.md)).
+The reference host is a [Cloudflare Worker serving static assets](https://developers.cloudflare.com/workers/static-assets/) on the free plan, not Cloudflare Pages, which mints a new public `<hash>.<project>.pages.dev` address on every deployment — a bad fit for a feed whose privacy is its URL. Nothing needs creating at the host beforehand: the first upload creates the Worker under the name in the runner's config (steps 8–9 of [docs/SETUP.md](docs/SETUP.md)).
 
-**Only CI publishes.** [`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs the pipeline and uploads — one job per feed, at 06:00 UTC daily or on manual dispatch (narrowable to a single feed; every run spends model credits). `curate-run` itself stops at `build/` unless `--deploy` is given, and the devcontainer holds no deploy credential — so nothing run by hand can reach the internet by accident. Rehearse an upload without one:
+**Only CI publishes.** Your configuration repository's scheduled workflow calls [`curate.yml`](.github/workflows/curate.yml) once per feed, which runs the pipeline inside the image and uploads. `curate-run` itself stops at `build/` unless `--deploy` is given, and the deploy credentials exist only as CI secrets — so nothing run by hand can reach the internet by accident. Rehearse an upload without one:
 
 ```bash
-curate-deploy --dry-run --provider wrangler   # prints the wrangler command, runs nothing
+curate-deploy --config feeds/<name>/config.toml --dry-run --provider wrangler   # prints the wrangler command, runs nothing
 ```
 
 **An unchanged feed is not re-uploaded.** Render and deploy each record a content hash, so a quiet day costs nothing and the Worker's deployment history stays a list of real changes. `--force` overrides that — use it after changing something the hash doesn't cover, such as `_headers`.
@@ -274,7 +270,7 @@ All three take `--date` and `--config`; the first two also take `--corpus-dir`.
 
 ## Reference
 
-- **[docs/SETUP.md](docs/SETUP.md)** — getting a working instance from a fresh clone, in ten steps, and what to check when one of them is wrong.
+- **[docs/SETUP.md](docs/SETUP.md)** — setting up your own configuration repository and its first feed, in eleven steps, and what to check when one of them is wrong.
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — why the system is shaped this way, the artifact and record contracts, and the handful of things that look like tunables and are not.
 - **[docs/scoring-spec.md](docs/scoring-spec.md)** — how judgements become a ranking: scales, arithmetic, the score floor, assembly order, rejects log.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — running the checks, managing dependencies, and the conventions.
