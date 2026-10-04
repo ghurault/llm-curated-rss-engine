@@ -51,6 +51,7 @@ RUN apt-get update \
 
 # The formatters pre-commit runs as `language: system`, plus hadolint for its VS
 # Code extension. Pinned here, since the hook config cannot pin a system tool.
+# Prettier is the exception: pre-commit installs its own, at the same version.
 ARG PRETTIER_VERSION=3.9.9
 ARG TAPLO_VERSION=0.10.0
 ARG SHFMT_VERSION=3.14.1
