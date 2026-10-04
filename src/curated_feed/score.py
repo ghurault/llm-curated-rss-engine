@@ -307,7 +307,10 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="YYYY-MM-DD",
         help="collection day to score (default: the most recent one)",
     )
-    parser.add_argument("--provider", help="scorer to use, overriding the config")
+    parser.add_argument(
+        "--provider",
+        help="scorer to use (stub, file or anthropic), overriding the config",
+    )
     parser.add_argument(
         "--response",
         type=Path,

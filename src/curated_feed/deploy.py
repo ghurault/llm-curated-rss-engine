@@ -277,7 +277,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="Upload the built feed to the host it is served from.",
     )
     parser.add_argument("--config", type=Path, help="path to config.toml")
-    parser.add_argument("--provider", help="deployer to use, overriding the config")
+    parser.add_argument(
+        "--provider", help="deployer to use (none or wrangler), overriding the config"
+    )
     parser.add_argument("--build-dir", type=Path, help="directory to upload")
     parser.add_argument(
         "--dry-run",
@@ -287,7 +289,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--force",
         action="store_true",
-        help="upload even when the feed has not changed since the last one",
+        help=(
+            "upload even when the feed has not changed since the last one, "
+            "as after a change the content hash does not cover, such as _headers"
+        ),
     )
     return parser
 

@@ -105,7 +105,10 @@ def build_parser() -> argparse.ArgumentParser:
         choices=STAGES,
         help="start at this stage instead of the beginning",
     )
-    parser.add_argument("--provider", help="scorer to use, overriding the config")
+    parser.add_argument(
+        "--provider",
+        help="scorer to use (stub, file or anthropic), overriding the config",
+    )
     parser.add_argument(
         "--response",
         type=Path,
