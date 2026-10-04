@@ -302,6 +302,7 @@ A truncated response (`max_tokens`) or a declined request fails the same way rat
 The raw response is kept at `state/<name>/response/DATE.json` either way.
 
 **Only CI publishes.** `curate-run` stops at `build/` unless `--deploy` is given, and the deploy credentials exist only as CI secrets.
+`build/<name>/` then holds everything the host serves: `robots.txt`, `_headers`, and `feed.xml` and `index.html` under the path prefix.
 An unchanged feed is not re-uploaded; `curate-deploy --force` overrides that, which is needed after changing something the content hash does not cover, such as `_headers`.
 
 **Expect your reader to lag by hours.** The upload takes seconds, but a reader polls a low-traffic feed rarely; Feedly, for one, can take hours.

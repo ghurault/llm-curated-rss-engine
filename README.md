@@ -62,7 +62,9 @@ The published feed is public but hard to find: its URL is unguessable, and `robo
 │   ├── config.template.toml     the annotated settings reference, and what to copy
 │   └── editorial-policy.template.md  the annotated taste reference, and what to copy
 ├── docs/                        hand-written documentation
-│   ├── SETUP.md                 how to get it running the first time
+│   ├── SETUP.md                 how to get it running, and keep it running
+│   ├── CLI.md                   the command-line reference, generated from the parsers
+│   ├── PRIVACY.md               what each part of the system can see
 │   ├── ARCHITECTURE.md          why it is shaped this way, and the contracts
 │   ├── scoring-spec.md          how judgements become a ranking
 │   └── api/                     generated API reference (git ignored)
@@ -81,179 +83,32 @@ The published feed is public but hard to find: its URL is unguessable, and `robo
 
 A configuration repository's own layout — `feeds/`, `eval/`, `state/` and the workflow that calls `curate.yml` — is step 1 of [docs/SETUP.md](docs/SETUP.md).
 
-`docs/scoring-spec.md` is the ranking specification: the scales, the arithmetic, the score floor, the assembly order and the rejects log.
-It is written for whoever changes the selection code, and is deliberately **never** loaded into a prompt — the model is not told the floor or the item cap, because knowing them would only tempt it to pre-filter or pad.
-What the model _is_ sent is exactly `src/curated_feed/prompt.md` and the runner's `editorial-policy.md`, in that order.
-The first ships with the package and no `config.toml` can name it: its response section is the schema the pipeline parses back, so it versions with the code that reads it. `--scoring-prompt PATH` overrides it for one command.
-
-`docs/ARCHITECTURE.md` records why the system is shaped this way, including the artifact and record contracts and the handful of things that look like tunables and are not.
-
 ## Getting started
 
-Setting one up is a one-time sequence of its own, and it lives in **[docs/SETUP.md](docs/SETUP.md)** — your configuration repository, the engine's image, subscription list, editorial policy, API key, the random name the feed is served from, the Cloudflare Worker, the repository secrets, and the schedule.
-Everything below assumes that is done.
-
-**No key is stored in this repository** — credentials are resolved from the environment, and the two offline scoring providers (`stub`, `file`) need none at all.
-
-## Running it
-
-Commands are shown bare, as an installed package provides them; from the image, prefix each one as in step 2 of [docs/SETUP.md](docs/SETUP.md).
-A runner is chosen by pointing at its config, and there is no default:
-
-```bash
-curate-fetch --config feeds/<name>/config.toml   # collect today into that feed's corpus
-curate-run --config feeds/<name>/config.toml     # today, end to end, stopping at build/
-```
-
-`--config` is found the usual way when it is left out, by searching upwards for a `config.toml`, so with an installed package `cd feeds/<name>` and then plain `curate-run` works as well — though not through the image, which sees only the directory it was started in.
-What no longer works is a bare command from the repository root: with nothing to find, it says so rather than picking a feed for you.
-
-`curate-fetch` keeps items published within the lookback window (default 2 days) and ends with a summary: feeds attempted, succeeded, failed and why, and items written.
-Broken or dead feeds are reported, not fatal.
-Items already in any corpus file are skipped, so re-running the same day adds nothing.
-
-`curate-run` then scores, optionally checks whether the picks are behind a paywall, selects and renders.
-Unattended, all of that happens in CI once a day, one job per feed; by hand it is mostly used to replay a past day.
-
-## Tuning the policy
-
-The point of stage boundaries being files is that a past day can be re-run without refetching it.
-How far back you start depends on what you changed:
-
-```bash
-curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from select    # after changing a weight or the item cap
-curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from score …   # after editing the policy: needs a fresh answer
-```
-
-Editing a runner's `editorial-policy.md` changes what the model is asked, so it needs a new response.
-Editing its `config.toml` changes only the arithmetic, and re-selecting a saved response takes a second.
-Either way it is that feed alone: no other runner reads those files, or the state the replay rewrites.
-
-A day can also be scored **without an API key**, which is how the policy was written in the first place:
-
-```bash
-curate-export --prompt > day.md          # both policy documents plus the day's candidates
-# paste day.md into a chat session, save the JSON reply as response.json
-curate-run --date 2026-08-08 --provider file --response response.json
-```
-
-Keep notes in `eval/labels/<name>/` — which picks were right, which were misses, and what the policy failed to say.
-
-## Scoring with Claude
-
-`--provider` overrides the config for one run, so a day can be re-scored against a real model, or against none, without editing anything:
-
-```bash
-curate-run --date 2026-08-08 --provider anthropic    # the real thing
-curate-run --date 2026-08-08 --provider stub         # recency only, calls nothing
-```
-
-Model choice is what drives the cost: you can start with Haiku 4.5 to see if it is good enough. If the picks disappoint, considering that judgment is the product, you can consider a more expensive model like Sonnet at a `medium` effort.
-
-**What leaves the machine.** The day's headlines and summaries, which are already public, and both policy documents.
-`editorial-policy.md` is the disclosive one — it describes what you care about. Anthropic does not train on API inputs by default; if that is not good enough, the provider is one class behind a protocol (see `docs/ARCHITECTURE.md`, D7).
-
-**When it fails.** A response that does not validate is retried once with the error appended.
-A second failure publishes nothing and exits non-zero — the previously published feed stays served, so a bad day costs one missing day, and the raw response is on disk at `state/<name>/response/DATE.json` either way.
-A truncated response (`max_tokens`) and a declined request are both hard failures rather than short days.
-
-## Publishing the feed
-
-Rendering stops at the filesystem. `build/` then holds everything the host needs:
-
-```text
-build/<name>/robots.txt            asks crawlers not to fetch
-build/<name>/_headers              tells the ones that fetch anyway not to index
-build/<name>/<path_prefix>/feed.xml
-build/<name>/<path_prefix>/index.html
-```
-
-One build directory per runner, and one Worker per runner — an upload replaces a Worker's whole asset manifest, so two feeds sharing one would each delete the other (`docs/ARCHITECTURE.md`, D8).
-
-The reference host is a [Cloudflare Worker serving static assets](https://developers.cloudflare.com/workers/static-assets/) on the free plan, not Cloudflare Pages, which mints a new public `<hash>.<project>.pages.dev` address on every deployment — a bad fit for a feed whose privacy is its URL. Nothing needs creating at the host beforehand: the first upload creates the Worker under the name in the runner's config (steps 8–9 of [docs/SETUP.md](docs/SETUP.md)).
-
-**Only CI publishes.** Your configuration repository's scheduled workflow calls [`curate.yml`](.github/workflows/curate.yml) once per feed, which runs the pipeline inside the image and uploads. `curate-run` itself stops at `build/` unless `--deploy` is given, and the deploy credentials exist only as CI secrets — so nothing run by hand can reach the internet by accident. Rehearse an upload without one:
-
-```bash
-curate-deploy --config feeds/<name>/config.toml --dry-run --provider wrangler   # prints the wrangler command, runs nothing
-```
-
-**An unchanged feed is not re-uploaded.** Render and deploy each record a content hash, so a quiet day costs nothing and the Worker's deployment history stays a list of real changes. `--force` overrides that — use it after changing something the hash doesn't cover, such as `_headers`.
-
-**Expect the reader to lag by hours.** The scheduled run can start minutes late, and the upload itself takes seconds — the real delay is Feedly's own poll interval, which for a low-traffic feed sits in the least-favoured, hours-not-minutes bucket. Refresh the source by hand in the Feedly UI when you want it sooner.
-
-**Late and missing look the same.** An entry carries its article's publication date, not the run time, so with a two-day lookback a fresh entry can arrive already dated two days ago and sort below what you've read. Check the Actions log and `state/<name>/feed.json` before assuming something didn't publish.
+[docs/SETUP.md](docs/SETUP.md) sets up your own configuration repository and its first feed, then covers running it day to day.
 
 ## Commands
 
-`curate-template config|policy` — print one of the two references a new runner is copied from, to be redirected into its directory.
-Both ship with the engine and nothing reads them at runtime.
+Each command's options are in the [command-line reference](docs/CLI.md), or its `--help`.
 
-`curate-validate PATH` — check a runner's configuration and the files it names, where `PATH` is one `config.toml` or a directory whose subdirectories are runners.
-Reads nothing but the filesystem: no feed is resolved and no credential is needed, so it is safe as a pull-request gate and as an unattended preflight.
-Exits non-zero with one line per problem.
-
-`curate-fetch` — fetch feeds into today's corpus file.
-
-| flag                    | effect                                                |
-| ----------------------- | ----------------------------------------------------- |
-| `--days N`              | lookback window in days (`0` disables date filtering) |
-| `--sources PATH`        | OPML file to read                                     |
-| `--corpus-dir PATH`     | where corpus files are written                        |
-| `--summary-max-chars N` | summary truncation limit                              |
-| `--concurrency N`       | maximum concurrent requests                           |
-| `--user-agent STRING`   | `User-Agent` header                                   |
-| `--config PATH`         | config file to use                                    |
-
-`curate-export [FILE]` — render a corpus file for review, defaulting to the most recent one.
-
-| flag                | effect                                                   |
-| ------------------- | -------------------------------------------------------- |
-| `--prompt`          | emit the whole scoring prompt, policy documents included |
-| `--max-items N`     | render at most this many items                           |
-| `--out PATH`        | write to a file instead of stdout                        |
-| `--corpus-dir PATH` | where to look for corpus files                           |
-| `--config PATH`     | config file to use                                       |
-
-`curate-score` — ask a scorer to judge one day.
-
-| flag              | effect                                                  |
-| ----------------- | ------------------------------------------------------- |
-| `--date DAY`      | collection day to score (default: the most recent)      |
-| `--provider NAME` | `stub`, `file` or `anthropic`; overrides the config     |
-| `--response PATH` | saved response to read, required by the `file` provider |
-| `--config PATH`   | config file to use                                      |
-
-`curate-paywall` — check whether the day's graded articles can be read, and record a verdict for each.
-Does nothing unless `[paywall] enabled` is set for the runner.
-`curate-select` — score a saved response and assemble the day's selection.
-`curate-render` — publish that selection into the rolling feed under `build/`.
-All three take `--date` and `--config`; the first two also take `--corpus-dir`.
-
-`curate-deploy` — upload `build/` to the host the feed is served from.
-
-| flag               | effect                                                       |
-| ------------------ | ------------------------------------------------------------ |
-| `--provider NAME`  | `none` or `wrangler`; overrides the config                   |
-| `--dry-run`        | print the upload that would run, and upload nothing          |
-| `--force`          | upload even when the feed has not changed since the last one |
-| `--build-dir PATH` | directory to upload                                          |
-| `--config PATH`    | config file to use                                           |
-
-`curate-run` — the whole chain, in order.
-
-| flag              | effect                                                               |
-| ----------------- | -------------------------------------------------------------------- |
-| `--date DAY`      | replay a past day; skips fetching, since it is past                  |
-| `--from STAGE`    | start at `fetch`, `score`, `paywall`, `select`, `render` or `deploy` |
-| `--deploy`        | publish as well, instead of stopping at `build/`                     |
-| `--provider NAME` | passed to the scoring stage                                          |
-| `--response PATH` | passed to the scoring stage                                          |
-| `--config PATH`   | config file to use                                                   |
+| command           | what it does                                                          |
+| ----------------- | --------------------------------------------------------------------- |
+| `curate-template` | print the annotated config or policy a new runner is copied from      |
+| `curate-validate` | check a runner's configuration offline, without credentials           |
+| `curate-fetch`    | collect the day's new articles into the runner's corpus               |
+| `curate-export`   | render a day's corpus for review, or as a prompt to paste into chat   |
+| `curate-score`    | judge a day's articles with the configured scorer                     |
+| `curate-paywall`  | check which graded articles are paywalled, when the runner enables it |
+| `curate-select`   | turn the model's judgements into the day's selection                  |
+| `curate-render`   | add that selection to the rolling Atom feed under `build/`            |
+| `curate-deploy`   | upload `build/` to the host                                           |
+| `curate-run`      | the whole chain, or part of it for a past day                         |
 
 ## Reference
 
-- **[docs/SETUP.md](docs/SETUP.md)** — setting up your own configuration repository and its first feed, in eleven steps, and what to check when one of them is wrong.
+- **[docs/SETUP.md](docs/SETUP.md)** — setting up your own configuration repository and its first feed, running it day to day, and what to check when something is wrong.
+- **[docs/CLI.md](docs/CLI.md)** — every command and its options.
+- **[docs/PRIVACY.md](docs/PRIVACY.md)** — what the model provider, the host, your reader and publishers can see.
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — why the system is shaped this way, the artifact and record contracts, and the handful of things that look like tunables and are not.
 - **[docs/scoring-spec.md](docs/scoring-spec.md)** — how judgements become a ranking: scales, arithmetic, the score floor, assembly order, rejects log.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — running the checks, managing dependencies, and the conventions.
