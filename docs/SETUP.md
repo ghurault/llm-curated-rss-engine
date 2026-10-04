@@ -1,7 +1,7 @@
 # Setup
 
 Getting your own instance running, with one curated feed.
-For day-to-day use see [README.md](../README.md); for the reasoning, [ARCHITECTURE.md](ARCHITECTURE.md).
+For every command's options see [CLI.md](CLI.md); for the reasoning, [ARCHITECTURE.md](ARCHITECTURE.md).
 
 > **A template configuration repository is coming soon.**
 > It will make onboarding easier and supersede most of this guide.

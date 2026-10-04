@@ -58,16 +58,18 @@ Changing any of it is a breaking release, and the cache paths especially: a call
 
 ## Where things are written down
 
-| Document                                        | Holds                                                        | Read it when                    |
-| ----------------------------------------------- | ------------------------------------------------------------ | ------------------------------- |
-| `README.md`                                     | how to run it                                                | using the thing                 |
-| `docs/SETUP.md`                                 | how to get it running the first time                         | setting it up, or re-setting it |
-| `docs/ARCHITECTURE.md`                          | why it is shaped this way, the contracts, and the invariants | changing how it works           |
-| `docs/scoring-spec.md`                          | the ranking mechanics as implemented                         | changing `select.py`            |
-| `src/curated_feed/prompt.md`                    | how the model is told to judge an article                    | changing what the model returns |
-| `src/curated_feed/config.template.toml`         | every setting a runner can have, annotated                   | adding or changing a setting    |
-| `src/curated_feed/editorial-policy.template.md` | the shape of a policy, and what the prompt relies on in it   | changing how a policy is read   |
-| `.github/workflows/curate.yml`                  | what one runner's day does, and what callers depend on       | changing how it is published    |
+| Document                                        | Holds                                                        | Read it when                                             |
+| ----------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------- |
+| `README.md`                                     | what it is, and a map of the rest                            | deciding whether to use it                               |
+| `docs/SETUP.md`                                 | how to get it running, and how to run it day to day          | setting it up, or operating it                           |
+| `docs/CLI.md`                                   | every command and its options, rendered from the parsers     | using a command; to change it, edit its `build_parser()` |
+| `docs/PRIVACY.md`                               | what each part of the system can see                         | changing what leaves the machine                         |
+| `docs/ARCHITECTURE.md`                          | why it is shaped this way, the contracts, and the invariants | changing how it works                                    |
+| `docs/scoring-spec.md`                          | the ranking mechanics as implemented                         | changing `select.py`                                     |
+| `src/curated_feed/prompt.md`                    | how the model is told to judge an article                    | changing what the model returns                          |
+| `src/curated_feed/config.template.toml`         | every setting a runner can have, annotated                   | adding or changing a setting                             |
+| `src/curated_feed/editorial-policy.template.md` | the shape of a policy, and what the prompt relies on in it   | changing how a policy is read                            |
+| `.github/workflows/curate.yml`                  | what one runner's day does, and what callers depend on       | changing how it is published                             |
 
 ## Managing requirements
 

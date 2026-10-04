@@ -4,7 +4,7 @@ The conventions for this repository are in [.github/copilot-instructions.md](.gi
 Read that file and follow it; it is the single source of truth for style, structure and project constraints, whichever assistant is being used.
 
 The rest of this file is the things that are not written down elsewhere and cost time to rediscover.
-Nothing here repeats [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (why it is shaped this way), [docs/SETUP.md](docs/SETUP.md) (how to get it running), [CONTRIBUTING.md](CONTRIBUTING.md) (how to work on it) or [README.md](README.md) (how to run it) — read those first.
+Nothing here repeats [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (why it is shaped this way), [docs/SETUP.md](docs/SETUP.md) (how to get it running), [CONTRIBUTING.md](CONTRIBUTING.md) (how to work on it), [docs/CLI.md](docs/CLI.md) (the commands) or [README.md](README.md) (what it is) — read those first.
 
 ## Working agreements
 

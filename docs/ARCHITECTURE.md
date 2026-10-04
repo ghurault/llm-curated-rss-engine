@@ -3,9 +3,9 @@
 Decision record. Explains _why_ the system is shaped this way, so that changes are made
 deliberately rather than by accident.
 
-For how to run it, see `README.md`; for setting one up, `docs/SETUP.md`. For the ranking
-mechanics, `docs/scoring-spec.md`. For the editorial rules loaded into the prompt, a
-runner's `editorial-policy.md`.
+For setting one up and running it, see `docs/SETUP.md`; for the commands, `docs/CLI.md`.
+For the ranking mechanics, `docs/scoring-spec.md`. For the editorial rules loaded into the
+prompt, a runner's `editorial-policy.md`.
 
 ---
 
@@ -418,7 +418,7 @@ revision for policy content, and no historical commit was worth that.
 ## Contracts
 
 The shapes other things depend on. Changing one is a deliberate act, not a refactor — which
-is why they live here rather than in the README.
+is why they live here rather than in the user documentation.
 
 ### Artifacts
 
@@ -553,8 +553,9 @@ Each with the signal that would justify building it.
 
 ## Maintaining this document
 
-- Record the decision and the reason, not the implementation. Module lists and config
-  references belong in the README or the code, where they cannot go stale silently.
+- Record the decision and the reason, not the implementation. Module lists belong in the
+  README, and config and command references in the code (the template, the parsers), where
+  they cannot go stale silently.
 - When reversing a decision, keep the old entry and note why it changed. The reasoning is
   more valuable than the conclusion.
 - Anything in **Invariants** should not be changed without reading its paragraph first.
