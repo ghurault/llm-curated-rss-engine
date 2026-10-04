@@ -131,6 +131,9 @@ model = "claude-sonnet-5"
 effort = "medium"   # leave empty for Haiku 4.5, which rejects it
 ```
 
+The model drives the cost.
+Haiku 4.5 is a cheap place to start, with `effort` left empty; Sonnet at `medium`, as above and in the template, is a good default when the picks matter more than the bill.
+
 Then re-score a day you have labelled, and compare:
 
 ```bash
@@ -277,3 +280,32 @@ Comment out the `schedule` until the policy is worth paying for.
 | One feed stops updating                     | its job failed on its own; read that job's log                                       |
 | A shorter feed after a CI outage            | the Actions cache was evicted; it refills, and nothing already read comes back       |
 | `curate-score` exits non-zero               | the answer failed validation twice; the raw text is in `state/<name>/response/`      |
+
+## Running it day to day
+
+Once CI runs on its schedule there is nothing to do by hand.
+What follows is for when you tune a policy, or something looks wrong.
+
+**Replay a past day rather than refetching it.** Every stage writes its output to a file, so the place to restart from depends on what you changed:
+
+```bash
+engine curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from select   # after changing a weight or the item cap
+engine curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from score    # after editing the policy: needs a fresh answer
+```
+
+Re-selecting a saved response takes a second and costs nothing.
+Either way only that feed is affected: no other runner reads its files or its state.
+
+**When scoring fails.** A response that does not validate is retried once with the error appended.
+A second failure publishes nothing and exits non-zero, so the previous feed stays served and a bad day costs one missing day.
+A truncated response (`max_tokens`) or a declined request fails the same way rather than producing a short day.
+The raw response is kept at `state/<name>/response/DATE.json` either way.
+
+**Only CI publishes.** `curate-run` stops at `build/` unless `--deploy` is given, and the deploy credentials exist only as CI secrets.
+An unchanged feed is not re-uploaded; `curate-deploy --force` overrides that, which is needed after changing something the content hash does not cover, such as `_headers`.
+
+**Expect your reader to lag by hours.** The upload takes seconds, but a reader polls a low-traffic feed rarely; Feedly, for one, can take hours.
+Refresh the feed by hand in the reader when you want it sooner.
+
+**A late entry looks like a missing one.** An entry carries its article's publication date, not the run time, so with a two-day lookback a fresh entry can arrive already dated two days ago and sort below what you've read.
+Check the Actions log and `state/<name>/feed.json` before assuming something didn't publish.
