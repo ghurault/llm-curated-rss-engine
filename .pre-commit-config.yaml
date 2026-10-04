@@ -45,7 +45,6 @@ repos:
     hooks:
       - id: shellcheck
   # mirrors-prettier is archived, so pre-commit installs Prettier itself here.
-  # Keep the version in step with PRETTIER_VERSION in the Dockerfile.
   - repo: local
     hooks:
       - id: prettier
