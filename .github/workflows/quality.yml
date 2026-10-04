@@ -43,5 +43,5 @@ jobs:
       - name: Run every hook
         env:
           # The devcontainer installs these, and the runner does not have them.
-          SKIP: prettier,taplo,shfmt
+          SKIP: taplo,shfmt
         run: pre-commit run --all-files --show-diff-on-failure --color=always

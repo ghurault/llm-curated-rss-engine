@@ -51,13 +51,10 @@ RUN apt-get update \
 
 # The formatters pre-commit runs as `language: system`, plus hadolint for its VS
 # Code extension. Pinned here, since the hook config cannot pin a system tool.
-ARG PRETTIER_VERSION=3.9.9
 ARG TAPLO_VERSION=0.10.0
 ARG SHFMT_VERSION=3.14.1
 ARG HADOLINT_VERSION=2.15.1
-RUN npm install --global --no-fund --no-audit "prettier@${PRETTIER_VERSION}" \
-    && npm cache clean --force \
-    && case "$(uname -m)" in \
+RUN case "$(uname -m)" in \
         aarch64) taplo=aarch64 shfmt=arm64 hadolint=arm64 ;; \
         *) taplo=x86_64 shfmt=amd64 hadolint=x86_64 ;; \
     esac \

@@ -44,14 +44,18 @@ repos:
     rev: v0.11.0.1
     hooks:
       - id: shellcheck
-  # Installed in the devcontainer, not by pre-commit, so quality.yml skips them.
+  # mirrors-prettier is archived, so pre-commit installs Prettier itself here.
   - repo: local
     hooks:
       - id: prettier
         name: prettier
         entry: prettier --write
-        language: system
+        language: node
+        additional_dependencies: [prettier@3.9.9]
         files: \.(json|jsonc|md|ya?ml)$
+  # Installed in the devcontainer, not by pre-commit, so quality.yml skips them.
+  - repo: local
+    hooks:
       - id: taplo
         name: taplo
         entry: taplo format
