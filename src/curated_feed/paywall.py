@@ -399,7 +399,10 @@ def format_summary(summary: RunSummary) -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="curate-paywall",
-        description="Check whether the day's graded articles can be read.",
+        description=(
+            "Check whether the day's graded articles can be read. "
+            "Does nothing unless [paywall] enabled is set for the runner."
+        ),
     )
     parser.add_argument("--config", type=Path, help="path to config.toml")
     parser.add_argument(

@@ -313,7 +313,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Check a runner's configuration and the files it names. "
             "Reads nothing but the filesystem: no feed is resolved and no "
-            "credential is needed."
+            "credential is needed. Exits non-zero with one line per problem."
         ),
     )
     # Required, and not found by searching upwards the way every other command's

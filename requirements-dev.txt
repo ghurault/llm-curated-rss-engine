@@ -52,6 +52,7 @@ docutils==0.22.4
     # via
     #   myst-parser
     #   sphinx
+    #   sphinx-argparse
 executing==2.2.1
     # via stack-data
 feedparser==6.0.14
@@ -223,8 +224,11 @@ sphinx==9.1.0
     #   curated-feed (pyproject.toml)
     #   furo
     #   myst-parser
+    #   sphinx-argparse
     #   sphinx-autoapi
     #   sphinx-basic-ng
+sphinx-argparse==0.6.1
+    # via curated-feed (pyproject.toml)
 sphinx-autoapi==3.8.1
     # via curated-feed (pyproject.toml)
 sphinx-basic-ng==1.0.0b2

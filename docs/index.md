@@ -6,6 +6,8 @@
 :hidden:
 
 SETUP
+CLI
+PRIVACY
 ARCHITECTURE
 scoring-spec
 CONTRIBUTING

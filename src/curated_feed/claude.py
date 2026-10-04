@@ -114,7 +114,7 @@ class AnthropicScorer:
         except anthropic.AuthenticationError as exc:
             raise ScoreError(
                 "the Anthropic API rejected the credentials. Set ANTHROPIC_API_KEY, "
-                "or run `ant auth login`; see the README."
+                "or run `ant auth login`; see step 7 of docs/SETUP.md."
             ) from exc
         except anthropic.APIError as exc:
             raise ScoreError(f"the Anthropic API call failed: {_reason(exc)}") from exc

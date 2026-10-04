@@ -86,7 +86,7 @@ user_agent = ""
 # Which scorer runs:
 #   "stub"      grades the most recent items and calls nothing
 #   "file"      reads a response saved from a chat session (--response PATH)
-#   "anthropic" calls Claude; needs credentials, see the README
+#   "anthropic" calls Claude; needs credentials, see docs/SETUP.md step 7
 provider = "anthropic"
 
 # Required by the anthropic scorer, ignored by the others.

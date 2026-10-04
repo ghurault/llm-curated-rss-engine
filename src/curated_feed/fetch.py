@@ -433,7 +433,11 @@ def format_summary(summary: RunSummary) -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="curate-fetch",
-        description="Fetch subscribed feeds into a JSONL corpus file for today.",
+        description=(
+            "Fetch subscribed feeds into a JSONL corpus file for today. "
+            "A feed that fails is reported in the summary, not fatal, and an "
+            "item already in any corpus file is skipped."
+        ),
     )
     parser.add_argument("--config", type=Path, help="path to config.toml")
     parser.add_argument(

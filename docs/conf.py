@@ -22,13 +22,14 @@ version = release
 extensions = [
     "autoapi.extension",
     "myst_parser",
+    "sphinxarg.ext",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
 ]
 
-# Static analysis: the package is never imported, so building needs none of its
-# dependencies.
+# Static analysis, but the CLI page imports each command's parser, so building
+# needs the package installed with its dependencies.
 autoapi_dirs = ["../src"]
 autoapi_add_toctree_entry = False
 autoapi_options = [
