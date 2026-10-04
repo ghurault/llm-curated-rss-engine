@@ -6,6 +6,7 @@
 :hidden:
 
 SETUP
+CLI
 ARCHITECTURE
 scoring-spec
 CONTRIBUTING
