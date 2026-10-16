@@ -31,7 +31,7 @@ My use case is not to outsource the decision to read an article to AI, but rathe
 I subscribe to the curated feed in my RSS reader **alongside** the raw subscriptions, so it is a highlights lane rather than a filter.
 
 This repository is the engine, and holds nothing about any reader.
-Your feeds live in a private configuration repository of your own, which runs the engine's published image on a schedule and chooses when to take a new release — [docs/SETUP.md](docs/SETUP.md) builds one from scratch.
+Your feeds live in a private configuration repository of your own, which runs the engine's published image on a schedule and chooses when to take a new release — [docs/SETUP.md](docs/SETUP.md) starts one from the [example](https://github.com/ghurault/llm-curated-rss-example).
 
 ## Features
 
@@ -81,7 +81,7 @@ The published feed is public but hard to find: its URL is unguessable, and `robo
 └── Makefile                     common tasks
 ```
 
-A configuration repository's own layout — `feeds/`, `eval/`, `state/` and the workflow that calls `curate.yml` — is step 1 of [docs/SETUP.md](docs/SETUP.md).
+A configuration repository's own layout — `feeds/`, `eval/`, `state/` and the workflow that calls `curate.yml` — is the [example's](https://github.com/ghurault/llm-curated-rss-example#layout).
 
 ## Getting started
 
