@@ -4,7 +4,7 @@ Every command the engine installs, in the order a day runs through them.
 Each section is generated from the parser the command itself uses, so it matches `curate-<command> --help` for the installed version.
 On GitHub, where the sections below do not render, read [the published page](https://ghurault.github.io/llm-curated-rss-engine/CLI.html) or run `--help` instead.
 
-Commands are shown bare, as an installed package provides them; from the image, prefix each one with `engine` as in step 2 of [SETUP.md](SETUP.md).
+Commands are shown bare, as they are on `PATH` in a configuration repository's devcontainer (step 2 of [SETUP.md](SETUP.md)) or after installing the package.
 A runner is chosen with `--config feeds/<name>/config.toml`.
 Left out, it is found by searching upwards from the working directory, so a bare command works from inside `feeds/<name>/` but not from the repository root, which deliberately has no `config.toml`.
 Command-line options override the config for that run only.
