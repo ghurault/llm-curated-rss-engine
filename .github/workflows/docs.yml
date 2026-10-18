@@ -34,7 +34,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
 
-      - run: pip install --constraint requirements-dev.txt -e ".[docs]"
+      - run: pip install --constraint requirements-dev.txt --group docs -e .
 
       - run: make docs
 

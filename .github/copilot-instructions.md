@@ -93,7 +93,7 @@ These exist because this repository is a public engine, and each reader's config
 - `conventional-pre-commit` (commit-msg stage): enforce Conventional Commits message format
 
 **Environment**: All commands run inside the devcontainer, never on the host.
-Dependencies are declared in `pyproject.toml` and pinned by `make reqs` into `requirements.txt` (the application's own dependencies, which the image installs) and `requirements-dev.txt` (those plus the development extras). Never edit either pinned file by hand.
+Dependencies are declared in `pyproject.toml` and pinned by `make reqs` into `requirements.txt` (the application's own dependencies, which the image installs) and `requirements-dev.txt` (those plus the development dependency groups). Never edit either pinned file by hand.
 
 ## 8. Other Languages
 

@@ -24,17 +24,21 @@ dependencies = [
     "pydantic>=2.7",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "black",
     "ipykernel",
     "ipywidgets",
     "pre-commit",
-    "pytest",
-    "pytest-cov",
     "ruff",
     "typos",
     "uv",
+    { include-group = "docs" },
+    { include-group = "test" },
+]
+test = [
+    "pytest",
+    "pytest-cov",
 ]
 docs = [
     "furo",
