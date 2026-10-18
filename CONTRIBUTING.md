@@ -77,7 +77,7 @@ Direct dependencies live in `pyproject.toml`.
 Two pinned files are generated from it and should not be edited by hand:
 
 - `requirements.txt` — what the application itself needs. This is what the CI job installs.
-- `requirements-dev.txt` — the above plus the development extras, and what creating the devcontainer installs.
+- `requirements-dev.txt` — the above plus the development dependency groups, and what creating the devcontainer installs.
 
 After changing a dependency, recompile both and reinstall:
 

@@ -1,10 +1,10 @@
 .DEFAULT_GOAL := help
 
-## Compile requirements (application, then development)
+## Compile requirements (application, then development groups)
 .PHONY: reqs
 reqs:
 	uv pip compile pyproject.toml -o requirements.txt $(ARGS)
-	uv pip compile pyproject.toml -o requirements-dev.txt --all-extras -c requirements.txt $(ARGS)
+	uv pip compile pyproject.toml -o requirements-dev.txt --group dev --group docs -c requirements.txt $(ARGS)
 
 ## Upgrade requirements
 .PHONY: upgrade
@@ -14,7 +14,7 @@ upgrade: reqs
 ## Install development dependencies
 .PHONY: deps
 deps:
-	pip install -r requirements-dev.txt && pip install -e .[dev]
+	pip install -r requirements-dev.txt && pip install -e . --no-deps
 
 ## Set up a checkout for development: dependencies, package and git hooks
 .PHONY: init

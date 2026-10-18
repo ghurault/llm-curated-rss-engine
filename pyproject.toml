@@ -24,7 +24,7 @@ dependencies = [
     "pydantic>=2.7",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "black",
     "ipykernel",
