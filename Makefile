@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 ## Compile requirements (application, then development)
 .PHONY: reqs
 reqs:
