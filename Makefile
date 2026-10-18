@@ -3,14 +3,13 @@
 ## Compile requirements (application, then development)
 .PHONY: reqs
 reqs:
-	uv pip compile pyproject.toml -o requirements.txt
-	uv pip compile pyproject.toml -o requirements-dev.txt --all-extras -c requirements.txt
+	uv pip compile pyproject.toml -o requirements.txt $(ARGS)
+	uv pip compile pyproject.toml -o requirements-dev.txt --all-extras -c requirements.txt $(ARGS)
 
 ## Upgrade requirements
 .PHONY: upgrade
-upgrade:
-	uv pip compile pyproject.toml -o requirements.txt --upgrade
-	uv pip compile pyproject.toml -o requirements-dev.txt --all-extras -c requirements.txt --upgrade
+upgrade: ARGS = --upgrade
+upgrade: reqs
 
 ## Install development dependencies
 .PHONY: deps
