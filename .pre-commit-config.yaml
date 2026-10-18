@@ -6,6 +6,10 @@ repos:
       - id: conventional-pre-commit
         stages: [commit-msg]
         args: [--verbose]
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.50.3
+    hooks:
+      - id: typos
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 26.5.1
     hooks:
@@ -21,10 +25,6 @@ repos:
         args: ["--select", "D", "--ignore", "D202", "--fix-only", "--fix"]
       - id: ruff-check
         name: ruff-check
-  - repo: https://github.com/crate-ci/typos
-    rev: v1.50.3
-    hooks:
-      - id: typos
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -32,19 +32,6 @@ repos:
       - id: check-yaml
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
-  - repo: https://github.com/reteps/dockerfmt
-    rev: v0.5.4
-    hooks:
-      - id: dockerfmt
-  - repo: https://github.com/AleksaC/hadolint-py
-    rev: v2.15.1
-    hooks:
-      - id: hadolint
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
-    hooks:
-      - id: shellcheck
-  # mirrors-prettier is archived, so pre-commit installs Prettier itself here.
   - repo: local
     hooks:
       - id: prettier
@@ -53,17 +40,28 @@ repos:
         language: node
         additional_dependencies: [prettier@3.9.9]
         files: \.(json|jsonc|md|ya?ml)$
-  # Installed in the devcontainer, not by pre-commit, so quality.yml skips them.
   - repo: local
     hooks:
       - id: taplo
-        name: taplo
+        name: Auto-format TOML files with taplo
         entry: taplo format
-        language: system
+        language: python
+        additional_dependencies: ["taplo == 0.9.3"]
         types: [toml]
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.14.1-1
+    hooks:
       - id: shfmt
-        name: shfmt
-        entry: shfmt -w
-        language: system
-        types: [shell]
+  - repo: https://github.com/reteps/dockerfmt
+    rev: v0.5.4
+    hooks:
+      - id: dockerfmt
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.15.1
+    hooks:
+      - id: hadolint
 default_install_hook_types: [pre-commit, commit-msg]
