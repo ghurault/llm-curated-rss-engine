@@ -30,11 +30,15 @@ dev = [
     "ipykernel",
     "ipywidgets",
     "pre-commit",
-    "pytest",
-    "pytest-cov",
     "ruff",
     "typos",
     "uv",
+    { include-group = "docs" },
+    { include-group = "test" },
+]
+test = [
+    "pytest",
+    "pytest-cov",
 ]
 docs = [
     "furo",

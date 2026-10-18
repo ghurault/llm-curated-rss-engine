@@ -4,7 +4,7 @@
 .PHONY: reqs
 reqs:
 	uv pip compile pyproject.toml -o requirements.txt $(ARGS)
-	uv pip compile pyproject.toml -o requirements-dev.txt --group dev --group docs -c requirements.txt $(ARGS)
+	uv pip compile pyproject.toml -o requirements-dev.txt --group dev -c requirements.txt $(ARGS)
 
 ## Upgrade requirements
 .PHONY: upgrade
