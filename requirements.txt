@@ -11,7 +11,7 @@ anyio==4.15.1
     #   httpx2
 beautifulsoup4==4.15.0
     # via curated-feed (pyproject.toml)
-certifi==2026.7.22
+certifi==2026.10.23
     # via
     #   httpcore
     #   httpx
@@ -27,30 +27,30 @@ h11==0.16.0
     #   httpcore2
 httpcore==1.0.9
     # via httpx
-httpcore2==2.13.1
+httpcore2==2.16.0
     # via httpx2
 httpx==0.28.1
     # via curated-feed (pyproject.toml)
-httpx2==2.13.1
+httpx2==2.16.0
     # via anthropic
 idna==3.20
     # via
     #   anyio
     #   httpx
     #   httpx2
-jiter==0.17.0
+jiter==0.18.0
     # via anthropic
 opentelemetry-api==1.45.1
     # via anthropic
-pydantic==2.14.1
+pydantic==2.14.2
     # via
     #   curated-feed (pyproject.toml)
     #   anthropic
-pydantic-core==2.50.1
+pydantic-core==2.50.2
     # via pydantic
 sniffio==1.3.1
     # via anthropic
-soupsieve==3.0.3
+soupsieve==3.0.4
     # via beautifulsoup4
 truststore==0.10.5
     # via
