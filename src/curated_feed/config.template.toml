@@ -87,6 +87,7 @@ user_agent = ""
 #   "stub"      grades the most recent items and calls nothing
 #   "file"      reads a response saved from a chat session (--response PATH)
 #   "anthropic" calls Claude; needs credentials, see docs/SETUP.md step 7
+#   "openai"    calls any OpenAI-compatible endpoint; needs OPENAI_API_KEY
 provider = "anthropic"
 
 # Generous: a truncated response is a hard failure, not a short day. Thinking
@@ -113,6 +114,19 @@ model = "claude-sonnet-5"
 # Empty omits the parameter, which is REQUIRED for Haiku 4.5 — it rejects the
 # request outright. Blank this again if the model above ever goes back to Haiku.
 effort = "medium"
+
+# Any server speaking OpenAI's Chat Completions API: OpenAI, OpenRouter, Ollama,
+# vLLM, a PrivateMode proxy. The key is always OPENAI_API_KEY; a server that
+# needs none still wants the variable set, to anything.
+[score.openai]
+# Empty is OpenAI itself. Otherwise the API root, usually ending in /v1.
+base_url = ""
+
+# As the endpoint names it, e.g. "gpt-5-mini" or "openai/gpt-oss-120b".
+model = ""
+
+# Sent as reasoning_effort. Empty omits it: not every server or model takes it.
+effort = ""
 
 [policy]
 # The score floor. NOT a tunable: it must equal the maximum consequence score,

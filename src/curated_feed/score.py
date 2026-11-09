@@ -82,6 +82,7 @@ class TokenUsage:
     output_tokens: int = 0
     cache_read_tokens: int = 0
     cache_write_tokens: int = 0
+    unreported_calls: int = 0
 
     def add(
         self,
@@ -98,18 +99,32 @@ class TokenUsage:
         self.cache_read_tokens += cache_read_tokens
         self.cache_write_tokens += cache_write_tokens
 
+    def add_unreported(self) -> None:
+        """Count a call whose usage the server did not report.
+
+        Kept apart rather than added as zeroes, so the report cannot pass off
+        an unknown cost as a free one.
+        """
+        self.calls += 1
+        self.unreported_calls += 1
+
     def format(self) -> str:
         """One line for the run report.
 
         >>> TokenUsage(calls=1, input_tokens=2, output_tokens=3).format()
         '1 call, 2 in (0 cached), 3 out'
+        >>> TokenUsage(calls=2, unreported_calls=1).format()
+        '2 calls, 0 in (0 cached), 0 out; usage not reported for 1'
         """
         plural = "" if self.calls == 1 else "s"
-        return (
+        line = (
             f"{self.calls} call{plural}, "
             f"{self.input_tokens} in ({self.cache_read_tokens} cached), "
             f"{self.output_tokens} out"
         )
+        if self.unreported_calls:
+            line += f"; usage not reported for {self.unreported_calls}"
+        return line
 
 
 def describe_api_error(exc: Exception) -> str:
@@ -367,8 +382,22 @@ def make_scorer(config: Config, *, response_path: Path | None) -> Scorer:
             effort=settings.effort,
             timeout_seconds=config.score.timeout_seconds,
         )
+    if provider == "openai":
+        from .openai_compat import OpenAICompatibleScorer  # noqa: PLC0415
+
+        settings = config.score.openai
+        if not settings.model:
+            raise ScoreError("the openai scorer needs [score.openai] model to be set")
+        return OpenAICompatibleScorer(
+            model=settings.model,
+            max_tokens=config.score.max_tokens,
+            effort=settings.effort,
+            base_url=settings.base_url,
+            timeout_seconds=config.score.timeout_seconds,
+        )
     raise ScoreError(
-        f"unknown scorer provider: {provider!r} (known: stub, file, anthropic)"
+        f"unknown scorer provider: {provider!r} "
+        "(known: stub, file, anthropic, openai)"
     )
 
 
@@ -411,7 +440,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        help="scorer to use (stub, file or anthropic), overriding the config",
+        help="scorer to use (stub, file, anthropic or openai), overriding the config",
     )
     parser.add_argument(
         "--response",

@@ -24,6 +24,11 @@ stub_items = 2
 model = "test-model"
 effort = "low"
 
+[score.openai]
+model = "an-open-model"
+effort = ""
+base_url = "http://localhost:8080/v1"
+
 [policy]
 floor = 3.0
 max_items = 8

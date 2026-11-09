@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from curated_feed import claude
+from curated_feed import claude, openai_compat
 from curated_feed.config import load_config
 from curated_feed.models import MAX_CONSEQUENCE, Candidate, Response
 from curated_feed.policy import Prompt
@@ -246,12 +246,39 @@ class TestMakeScorer:
         assert isinstance(scorer, claude.AnthropicScorer)
         assert (scorer.model, scorer.effort) == ("test-model", "low")
 
+    def test_the_openai_scorer_reads_its_own_table(
+        self, monkeypatch: pytest.MonkeyPatch, fixtures_dir: Path
+    ):
+        endpoints: list[str] = []
+        monkeypatch.setattr(
+            openai_compat,
+            "build_client",
+            lambda *, base_url, timeout_seconds: endpoints.append(base_url),
+        )
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "openai"}
+        )
+
+        scorer = make_scorer(config, response_path=None)
+
+        assert isinstance(scorer, openai_compat.OpenAICompatibleScorer)
+        assert (scorer.model, scorer.effort) == ("an-open-model", "")
+        assert endpoints == ["http://localhost:8080/v1"]
+
     def test_a_missing_model_names_the_table_it_belongs_in(self, fixtures_dir: Path):
         config = load_config(fixtures_dir / "config.toml").with_overrides(
             score={"provider": "anthropic", "anthropic": {"model": ""}}
         )
 
         with pytest.raises(ScoreError, match=r"\[score\.anthropic\] model"):
+            make_scorer(config, response_path=None)
+
+    def test_a_missing_openai_model_names_its_table(self, fixtures_dir: Path):
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "openai", "openai": {"model": ""}}
+        )
+
+        with pytest.raises(ScoreError, match=r"\[score\.openai\] model"):
             make_scorer(config, response_path=None)
 
 

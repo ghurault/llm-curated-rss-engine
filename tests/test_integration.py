@@ -4,8 +4,8 @@ Every other test in this suite stops at one stage's edge. This one runs
 `curate-run` exactly as CI does — fetch, score, paywall, select, render — with
 three things substituted and nothing else: the HTTP client serves the fixture
 feeds through a mock transport, the paywall stage's client serves article pages
-through another, and the Anthropic client is the same fake `test_claude.py`
-uses.
+through another, and the model client is the same fake its unit tests use —
+Anthropic's by default, the OpenAI-compatible one where a test asks for it.
 Everything between those two points is the real code, including the parts that
 only ever meet in a full run: canonicalisation feeding deduplication, the
 corpus's order becoming the candidate numbers the model answers with, and the
@@ -35,13 +35,13 @@ from pathlib import Path
 import httpx
 import pytest
 
-from curated_feed import claude, fetch, paywall
+from curated_feed import claude, fetch, openai_compat, paywall
 from curated_feed.cli import main
 from curated_feed.models import MAX_CONSEQUENCE, Graded, Response
 from curated_feed.policy import default_prompt_path
 from curated_feed.render import ATOM_NAMESPACE
 from curated_feed.score import NO_SUBSTANCE
-from fakes import FakeClient, make_message
+from fakes import FakeChatClient, FakeClient, make_chunks, make_message
 
 FIXTURES = Path(__file__).parent / "fixtures" / "integration"
 PATH_PREFIX = "a-long-random-segment"
@@ -101,6 +101,10 @@ provider = "anthropic"
 [score.anthropic]
 model = "claude-opus-5"
 effort = ""
+
+[score.openai]
+model = "an-open-model"
+base_url = "https://models.example.invalid/v1"
 
 [publish]
 window = 100
@@ -656,6 +660,31 @@ class TestScoring:
         assert outcome.code != 0
         assert not (instance / "build").exists()
         assert saved_response(instance) == INVALID_RESPONSE
+
+
+class TestAnOpenAICompatibleProvider:
+    """The same chain with the other real scorer, chosen for one run."""
+
+    def test_a_day_runs_through_it(
+        self, instance: Path, curate, monkeypatch: pytest.MonkeyPatch
+    ):
+        reasoned = f"<think>Two clear the floor.</think>\n{graded_response(*TWO_GOOD_ARTICLES)}"
+        chat = FakeChatClient(make_chunks(reasoned))
+        endpoints: list[str] = []
+
+        def build(*, base_url: str, timeout_seconds: float | None):
+            endpoints.append(base_url)
+            return chat
+
+        monkeypatch.setattr(openai_compat, "build_client", build)
+
+        outcome = curate("--provider", "openai")
+
+        assert outcome.code == 0
+        assert endpoints == ["https://models.example.invalid/v1"]
+        assert chat.requests[0]["model"] == "an-open-model"
+        assert not outcome.client.requests
+        assert feed_ids(instance) == [BETA_ONE, GAMMA_ONE]
 
 
 class TestRunningAgain:
