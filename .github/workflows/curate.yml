@@ -50,7 +50,7 @@ jobs:
     # Moving the pin is how an engine release reaches the callers: take the
     # digest from the summary of an `image` run on main.
     container:
-      image: ghcr.io/ghurault/llm-curated-rss-engine@sha256:d47492f758eec62ace8e2fc74866688a33638ce69db32feeadb391013bc50c33
+      image: ghcr.io/ghurault/llm-curated-rss-engine@sha256:3a1cedc33ce90c422ece6da9f7a9648e67c12b36bec5a2cecf6b10b0d20f375d
     # Container jobs default to `sh`, and "Curate and publish" needs a bash array.
     defaults:
       run:
