@@ -5,12 +5,15 @@ from pathlib import Path
 
 import pytest
 
+from curated_feed import claude
+from curated_feed.config import load_config
 from curated_feed.models import MAX_CONSEQUENCE, Candidate, Response
 from curated_feed.policy import Prompt
 from curated_feed.score import (
     FileScorer,
     ScoreError,
     StubScorer,
+    make_scorer,
     read_response,
     score_day,
     unfence,
@@ -190,6 +193,29 @@ class FencedScorer:
 
     def generate(self, candidates, prompt, *, feedback=None) -> str:
         return '```json\n{"dropped": {}, "graded": []}\n```'
+
+
+class TestMakeScorer:
+    def test_the_anthropic_scorer_reads_its_own_table(
+        self, monkeypatch: pytest.MonkeyPatch, fixtures_dir: Path
+    ):
+        monkeypatch.setattr(claude, "build_client", lambda timeout_seconds: None)
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "anthropic"}
+        )
+
+        scorer = make_scorer(config, response_path=None)
+
+        assert isinstance(scorer, claude.AnthropicScorer)
+        assert (scorer.model, scorer.effort) == ("test-model", "low")
+
+    def test_a_missing_model_names_the_table_it_belongs_in(self, fixtures_dir: Path):
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "anthropic", "anthropic": {"model": ""}}
+        )
+
+        with pytest.raises(ScoreError, match=r"\[score\.anthropic\] model"):
+            make_scorer(config, response_path=None)
 
 
 class TestScoreDay:

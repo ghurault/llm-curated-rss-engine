@@ -97,6 +97,8 @@ max_retries = 0
 
 [score]
 provider = "anthropic"
+
+[score.anthropic]
 model = "claude-opus-5"
 effort = ""
 
@@ -139,6 +141,8 @@ max_retries = 0
 
 [score]
 provider = "anthropic"
+
+[score.anthropic]
 model = "claude-opus-5"
 effort = ""
 

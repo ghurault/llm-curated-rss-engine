@@ -17,9 +17,12 @@ user_agent = "test-agent/1.0"
 
 [score]
 provider = "stub"
-model = "test-model"
 max_tokens = 1000
 stub_items = 2
+
+[score.anthropic]
+model = "test-model"
+effort = "low"
 
 [policy]
 floor = 3.0

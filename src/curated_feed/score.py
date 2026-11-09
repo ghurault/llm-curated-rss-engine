@@ -335,12 +335,15 @@ def make_scorer(config: Config, *, response_path: Path | None) -> Scorer:
         # noticeable startup penalty for a module they never touch.
         from .claude import AnthropicScorer  # noqa: PLC0415
 
-        if not config.score.model:
-            raise ScoreError("the anthropic scorer needs [score] model to be set")
+        settings = config.score.anthropic
+        if not settings.model:
+            raise ScoreError(
+                "the anthropic scorer needs [score.anthropic] model to be set"
+            )
         return AnthropicScorer(
-            model=config.score.model,
+            model=settings.model,
             max_tokens=config.score.max_tokens,
-            effort=config.score.effort,
+            effort=settings.effort,
             timeout_seconds=config.score.timeout_seconds,
         )
     raise ScoreError(

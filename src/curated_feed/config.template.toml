@@ -89,22 +89,9 @@ user_agent = ""
 #   "anthropic" calls Claude; needs credentials, see docs/SETUP.md step 7
 provider = "anthropic"
 
-# Required by the anthropic scorer, ignored by the others.
-# Editorial judgement is the product, so this is the one place worth paying for:
-# Sonnet at ~300 headlines a day runs a few dollars a month, against ~$2-3 for
-# Haiku 4.5. If the picks disappoint, re-score a saved day against a larger
-# model before blaming the policy: `curate-run --date DATE --from score` costs
-# one call, not one day.
-model = "claude-sonnet-5"
-
 # Generous: a truncated response is a hard failure, not a short day. Thinking
-# counts against this too, so raising `effort` below spends part of it.
+# counts against this too, so raising `effort` spends part of it.
 max_tokens = 32000
-
-# How hard the model works: low, medium, high, xhigh, max.
-# Empty omits the parameter, which is REQUIRED for Haiku 4.5 — it rejects the
-# request outright. Blank this again if the model above ever goes back to Haiku.
-effort = "medium"
 
 # A day of ~300 candidates is one long call. Responses stream, so this bounds
 # the whole request rather than the gap between tokens.
@@ -112,6 +99,20 @@ timeout_seconds = 900.0
 
 # How many items the stub scorer grades.
 stub_items = 5
+
+# Each provider names its own model, so `--provider` switches both together.
+[score.anthropic]
+# Editorial judgement is the product, so this is the one place worth paying for:
+# Sonnet at ~300 headlines a day runs a few dollars a month, against ~$2-3 for
+# Haiku 4.5. If the picks disappoint, re-score a saved day against a larger
+# model before blaming the policy: `curate-run --date DATE --from score` costs
+# one call, not one day.
+model = "claude-sonnet-5"
+
+# How hard the model works: low, medium, high, xhigh, max.
+# Empty omits the parameter, which is REQUIRED for Haiku 4.5 — it rejects the
+# request outright. Blank this again if the model above ever goes back to Haiku.
+effort = "medium"
 
 [policy]
 # The score floor. NOT a tunable: it must equal the maximum consequence score,

@@ -105,7 +105,7 @@ Serve `build/<name>/` anywhere your reader can reach (step 9 is one way), subscr
 API credits are bought in the [Console](https://console.anthropic.com) and are **separate from a Claude.ai subscription**.
 The key comes from the environment, never from the config: put `ANTHROPIC_API_KEY=sk-ant-...` in `.env` and reopen the container, or `export` it in one terminal.
 
-The model drives the cost, and is chosen in `[score]`.
+The model drives the cost, and is chosen in `[score.anthropic]`.
 The example starts on Haiku 4.5, which is cheap and rejects the `effort` parameter, so `effort` is left empty there.
 The template's default, Sonnet at `effort = "medium"`, is the better choice when the picks matter more than the bill; change both lines together.
 

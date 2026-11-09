@@ -130,7 +130,7 @@ class TestCommand:
         assert command[command.index("--yes") + 1] == "wrangler"
 
     def test_an_empty_variable_means_the_default(self, monkeypatch):
-        """As an empty [score] effort means "omit", not "send nothing"."""
+        """As an empty [score.anthropic] effort means "omit", not "send nothing"."""
         monkeypatch.setenv(WRANGLER_PACKAGE_ENV, "")
         command = build_command(Path("/b"), settings=SETTINGS)
 
