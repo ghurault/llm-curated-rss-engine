@@ -46,6 +46,8 @@ from .state import (
 # Non-greedy so a response carrying one fenced block yields that block.
 CODE_FENCE = re.compile(r"```[A-Za-z0-9_+-]*\s*\n(?P<body>.*?)\n?\s*```", re.DOTALL)
 
+THINK_CLOSE = "</think>"
+
 NO_SUBSTANCE = "no-substance"
 MAX_ATTEMPTS = 2
 RESPONSE_STAGE = "response"
@@ -268,8 +270,8 @@ def score_day(
 
 
 def parse_response(raw: str) -> Response:
-    """Validate raw response text, tolerating a Markdown code fence."""
-    return Response.model_validate_json(unfence(raw))
+    """Validate raw response text, tolerating reasoning and a Markdown fence."""
+    return Response.model_validate_json(unfence(strip_reasoning(raw)))
 
 
 def read_response(path: Path) -> Response:
@@ -305,6 +307,25 @@ def unfence(text: str) -> str:
     """
     match = CODE_FENCE.search(text)
     return match.group("body") if match else text
+
+
+def strip_reasoning(text: str) -> str:
+    r"""The text after the model's `<think>` block, or the text unchanged.
+
+    Open-weight reasoning models served behind an OpenAI-compatible API often
+    return their reasoning inline rather than in a field of its own. Everything
+    up to the last closing tag goes, which also covers chat templates that open
+    the block in the prompt and leave only `</think>` in the response. It runs
+    before `unfence`, so a fenced draft inside the reasoning is never mistaken
+    for the answer.
+
+    >>> strip_reasoning('<think>Index 3.</think>\n{"graded": []}')
+    '{"graded": []}'
+    >>> strip_reasoning('{"graded": []}')
+    '{"graded": []}'
+    """
+    _, closed, answer = text.rpartition(THINK_CLOSE)
+    return answer.strip() if closed else text
 
 
 def _describe(exc: ValidationError) -> str:

@@ -14,8 +14,10 @@ from curated_feed.score import (
     ScoreError,
     StubScorer,
     make_scorer,
+    parse_response,
     read_response,
     score_day,
+    strip_reasoning,
     unfence,
 )
 from curated_feed.state import StateError
@@ -157,12 +159,47 @@ class TestUnfence:
         assert unfence('{"reason": "uses ``` marks"}') == '{"reason": "uses ``` marks"}'
 
 
+class TestStripReasoning:
+    """Open-weight reasoning models often think aloud in the response itself."""
+
+    def test_a_think_block_before_the_json_is_removed(self):
+        raw = '<think>\nIndex 3 has {braces}.\n</think>\n\n{"graded": []}'
+
+        assert strip_reasoning(raw) == '{"graded": []}'
+
+    def test_a_closing_tag_alone_still_ends_the_reasoning(self):
+        """Some chat templates open the block in the prompt, not the response."""
+        assert strip_reasoning('Index 3 matters.</think>{"graded": []}') == (
+            '{"graded": []}'
+        )
+
+    def test_text_without_reasoning_is_returned_unchanged(self):
+        assert strip_reasoning('{"graded": []}') == '{"graded": []}'
+
+    def test_a_fence_inside_the_reasoning_is_not_mistaken_for_the_answer(self):
+        """The reasoning goes first, or the fence search would find a draft."""
+        raw = (
+            '<think>Draft:\n```json\n{"graded": "draft"}\n```\n</think>\n'
+            '```json\n{"dropped": {}, "graded": []}\n```'
+        )
+
+        assert parse_response(raw).graded == []
+
+
 class TestReadResponse:
     """The saved artifact is raw text, so reading it back must be as tolerant."""
 
     def test_a_fenced_artifact_is_read_back(self, tmp_path: Path):
         path = tmp_path / "response.json"
         path.write_text('```json\n{"dropped": {}, "graded": []}\n```', encoding="utf-8")
+
+        assert read_response(path).graded == []
+
+    def test_an_artifact_that_thinks_aloud_is_read_back(self, tmp_path: Path):
+        path = tmp_path / "response.json"
+        path.write_text(
+            '<think>Hmm.</think>\n{"dropped": {}, "graded": []}', encoding="utf-8"
+        )
 
         assert read_response(path).graded == []
 
