@@ -82,15 +82,53 @@ class PaywallSettings(Section):
     user_agent: str = ""
 
 
+class AnthropicSettings(Section):
+    """The model the anthropic scorer calls. Empty `effort` omits the parameter."""
+
+    model: str = ""
+    effort: str = ""
+
+
+class OpenAISettings(Section):
+    """Any endpoint speaking OpenAI's Chat Completions API. Empty `base_url` is OpenAI.
+
+    No key setting, on purpose: the key is always `OPENAI_API_KEY`, read from
+    the environment like every other credential.
+    """
+
+    model: str = ""
+    effort: str = ""
+    base_url: str = ""
+
+
 class ScoreSettings(Section):
-    """Which scorer runs, and what it is allowed to spend."""
+    """Which scorer runs, and what it is allowed to spend.
+
+    What a model is called and which knobs it accepts belong to its provider,
+    so each provider has a table of its own. That is what lets `--provider`
+    switch the model along with the scorer, rather than sending one provider's
+    model name to another.
+    """
 
     provider: str = "stub"
-    model: str = ""
     max_tokens: int = Field(default=32000, ge=1)
-    effort: str = ""
     timeout_seconds: float = Field(default=900.0, gt=0)
     stub_items: int = Field(default=5, ge=0)
+    anthropic: AnthropicSettings = AnthropicSettings()
+    openai: OpenAISettings = OpenAISettings()
+
+    @model_validator(mode="before")
+    @classmethod
+    def _refuse_settings_that_moved(cls, data: Any) -> Any:
+        """Say where `model` and `effort` went, rather than merely refusing them."""
+        if isinstance(data, dict):
+            for key in ("model", "effort"):
+                if key in data:
+                    raise ValueError(
+                        f"[score] {key} has moved to [score.<provider>] {key}, "
+                        "for instance [score.anthropic]"
+                    )
+        return data
 
 
 class Adjustments(Section):

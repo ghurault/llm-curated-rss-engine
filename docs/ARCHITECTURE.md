@@ -236,13 +236,22 @@ way: "upload assets" produced a Pages project when D6 was written and produces a
 
 ## D7 — The provider is a seam, not a dependency
 
-Scoring goes through a protocol. `AnthropicScorer` calls Claude; the stub and file-backed
+Scoring goes through a protocol. `AnthropicScorer` calls Claude, `OpenAICompatibleScorer`
+calls any endpoint speaking OpenAI's Chat Completions API; the stub and file-backed
 backends call nothing, and they stay after the real one lands rather than being replaced by
 it — the stub is what proves a feed end to end without spending, and the file-backed one is
 what lets a chat session drive the real pipeline.
 
 The SDK is imported only when its provider is selected, so a fetch or a render never loads
-it. Nothing outside `claude.py` knows which provider is configured.
+it. Nothing outside `claude.py` and `openai_compat.py` knows which provider is configured,
+and each provider's model and effort sit in a table of its own (`[score.anthropic]`,
+`[score.openai]`), so `--provider` switches the model along with the scorer.
+
+The OpenAI-compatible scorer is written to what the servers copying OpenAI's API share, not
+to OpenAI's own: Chat Completions rather than Responses, plain string messages, the stream
+read chunk by chunk, and inline `<think>` reasoning stripped before parsing. Switching
+between OpenAI, OpenRouter, Ollama or vLLM is then a `base_url` and a `model`. The module is
+not called `openai.py` so that it never reads as, or shadows, the SDK it imports.
 
 **What leaves the machine** is the day's headlines and summaries, which are already public,
 and the two policy documents. The second is the disclosive one: `editorial-policy.md`

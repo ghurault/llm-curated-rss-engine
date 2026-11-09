@@ -15,8 +15,8 @@ Nearly everything below rests on one assumption: **your configuration repository
   - The published rationale can't leak it: it's built in code from the independent-source count alone, never from model output. Matched topics — the one piece of model output that _would_ leak the policy — are deliberately kept out of the feed and stay in the private selection log instead (D5).
 - **Model provider** — sees both documents above, and therefore learns your preferences.
   - Each run sends the day's headlines and summaries, which are already public, the engine's scoring prompt, and the runner's editorial policy.
-  - Anthropic does not train on API inputs by default.
-  - The provider is a seam, not a hard dependency (D7): swapping to a self-hosted model is one class away, not a rewrite.
+  - Anthropic does not train on API inputs by default; for an OpenAI-compatible endpoint, it is whatever that endpoint's operator promises.
+  - The provider is a seam, not a hard dependency (D7): pointing `[score.openai] base_url` at a self-hosted model or a confidential-computing proxy keeps the policy off a third party's servers, with no code change.
 - **Publish target** — the feed is public by default, so anyone with the URL could infer your preferences from what's selected.
   - Mitigated at two layers: an unguessable URL, and `robots.txt` plus a `noindex` header so a crawler that fetches anyway still won't index it.
 - **RSS reader** — sees the curated feed's URL and content, same as any other subscription.

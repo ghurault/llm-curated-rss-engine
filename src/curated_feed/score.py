@@ -24,6 +24,7 @@ import argparse
 import re
 import sys
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Protocol
@@ -45,13 +46,107 @@ from .state import (
 # Non-greedy so a response carrying one fenced block yields that block.
 CODE_FENCE = re.compile(r"```[A-Za-z0-9_+-]*\s*\n(?P<body>.*?)\n?\s*```", re.DOTALL)
 
+THINK_CLOSE = "</think>"
+
 NO_SUBSTANCE = "no-substance"
 MAX_ATTEMPTS = 2
 RESPONSE_STAGE = "response"
 
 
+RETRY_INSTRUCTION = (
+    "Your previous response did not validate: {feedback}\n"
+    "Return the whole response again as valid JSON, corrected."
+)
+
+
 class ScoreError(Exception):
     """Raised when a usable response cannot be obtained."""
+
+
+# --------------------------------------------------------------------------- #
+# Shared by the provider backends
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(slots=True)
+class TokenUsage:
+    """What a day of scoring cost, in tokens.
+
+    Accumulated across attempts, so a day that needed a retry reports what the
+    retry actually cost rather than what the successful call did. It takes
+    plain counts because every provider names the same numbers differently.
+    """
+
+    calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
+    unreported_calls: int = 0
+
+    def add(
+        self,
+        *,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        cache_read_tokens: int = 0,
+        cache_write_tokens: int = 0,
+    ) -> None:
+        """Fold one response's usage into the running total."""
+        self.calls += 1
+        self.input_tokens += input_tokens
+        self.output_tokens += output_tokens
+        self.cache_read_tokens += cache_read_tokens
+        self.cache_write_tokens += cache_write_tokens
+
+    def add_unreported(self) -> None:
+        """Count a call whose usage the server did not report.
+
+        Kept apart rather than added as zeroes, so the report cannot pass off
+        an unknown cost as a free one.
+        """
+        self.calls += 1
+        self.unreported_calls += 1
+
+    def format(self) -> str:
+        """One line for the run report.
+
+        >>> TokenUsage(calls=1, input_tokens=2, output_tokens=3).format()
+        '1 call, 2 in (0 cached), 3 out'
+        >>> TokenUsage(calls=2, unreported_calls=1).format()
+        '2 calls, 0 in (0 cached), 0 out; usage not reported for 1'
+        """
+        plural = "" if self.calls == 1 else "s"
+        line = (
+            f"{self.calls} call{plural}, "
+            f"{self.input_tokens} in ({self.cache_read_tokens} cached), "
+            f"{self.output_tokens} out"
+        )
+        if self.unreported_calls:
+            line += f"; usage not reported for {self.unreported_calls}"
+        return line
+
+
+def describe_api_error(exc: Exception) -> str:
+    r"""What an API error says, plus what it was raised from.
+
+    The provider SDKs turn every exception raised while sending into a
+    connection error whose whole message is "Connection error." — so a key with
+    a trailing newline, which is illegal in a header and fails before any socket
+    is opened, is reported identically to an unreachable host. The distinction
+    lives on `__cause__`, and only there.
+
+    >>> describe_api_error(ValueError("Connection error."))
+    'Connection error.'
+    >>> wrapped = ValueError("Connection error.")
+    >>> wrapped.__cause__ = OSError("nodename nor servname provided")
+    >>> describe_api_error(wrapped)
+    'Connection error. (OSError: nodename nor servname provided)'
+    """
+    cause = exc.__cause__
+    if cause is None or str(cause) in str(exc):
+        return str(exc)
+    return f"{exc} ({type(cause).__name__}: {cause})"
 
 
 class Scorer(Protocol):
@@ -190,8 +285,8 @@ def score_day(
 
 
 def parse_response(raw: str) -> Response:
-    """Validate raw response text, tolerating a Markdown code fence."""
-    return Response.model_validate_json(unfence(raw))
+    """Validate raw response text, tolerating reasoning and a Markdown fence."""
+    return Response.model_validate_json(unfence(strip_reasoning(raw)))
 
 
 def read_response(path: Path) -> Response:
@@ -229,6 +324,25 @@ def unfence(text: str) -> str:
     return match.group("body") if match else text
 
 
+def strip_reasoning(text: str) -> str:
+    r"""The text after the model's `<think>` block, or the text unchanged.
+
+    Open-weight reasoning models served behind an OpenAI-compatible API often
+    return their reasoning inline rather than in a field of its own. Everything
+    up to the last closing tag goes, which also covers chat templates that open
+    the block in the prompt and leave only `</think>` in the response. It runs
+    before `unfence`, so a fenced draft inside the reasoning is never mistaken
+    for the answer.
+
+    >>> strip_reasoning('<think>Index 3.</think>\n{"graded": []}')
+    '{"graded": []}'
+    >>> strip_reasoning('{"graded": []}')
+    '{"graded": []}'
+    """
+    _, closed, answer = text.rpartition(THINK_CLOSE)
+    return answer.strip() if closed else text
+
+
 def _describe(exc: ValidationError) -> str:
     """Validation errors as a short list, for the model to correct."""
     return "; ".join(
@@ -257,16 +371,33 @@ def make_scorer(config: Config, *, response_path: Path | None) -> Scorer:
         # noticeable startup penalty for a module they never touch.
         from .claude import AnthropicScorer  # noqa: PLC0415
 
-        if not config.score.model:
-            raise ScoreError("the anthropic scorer needs [score] model to be set")
+        settings = config.score.anthropic
+        if not settings.model:
+            raise ScoreError(
+                "the anthropic scorer needs [score.anthropic] model to be set"
+            )
         return AnthropicScorer(
-            model=config.score.model,
+            model=settings.model,
             max_tokens=config.score.max_tokens,
-            effort=config.score.effort,
+            effort=settings.effort,
+            timeout_seconds=config.score.timeout_seconds,
+        )
+    if provider == "openai":
+        from .openai_compat import OpenAICompatibleScorer  # noqa: PLC0415
+
+        settings = config.score.openai
+        if not settings.model:
+            raise ScoreError("the openai scorer needs [score.openai] model to be set")
+        return OpenAICompatibleScorer(
+            model=settings.model,
+            max_tokens=config.score.max_tokens,
+            effort=settings.effort,
+            base_url=settings.base_url,
             timeout_seconds=config.score.timeout_seconds,
         )
     raise ScoreError(
-        f"unknown scorer provider: {provider!r} (known: stub, file, anthropic)"
+        f"unknown scorer provider: {provider!r} "
+        "(known: stub, file, anthropic, openai)"
     )
 
 
@@ -309,7 +440,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        help="scorer to use (stub, file or anthropic), overriding the config",
+        help="scorer to use (stub, file, anthropic or openai), overriding the config",
     )
     parser.add_argument(
         "--response",

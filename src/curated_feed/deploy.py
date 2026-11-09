@@ -65,7 +65,7 @@ def wrangler_package(env: Mapping[str, str] | None = None) -> str:
     """The wrangler `npx` is asked for.
 
     An empty variable means the default rather than an empty argument, as an
-    empty `[score] effort` means "leave it out" rather than "send nothing".
+    empty `[score.anthropic] effort` means "leave it out" rather than "send nothing".
 
     A bare package name is npx's "run what is already installed" form, which is
     what the image sets it to: nothing is resolved and nothing is downloaded.

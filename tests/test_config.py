@@ -97,6 +97,40 @@ class TestPaywallSettings:
             load_config(path)
 
 
+class TestScoreSettings:
+    """Each provider carries its own model, so `--provider` swaps the pair."""
+
+    def test_a_provider_reads_its_own_table(self, config: Config):
+        assert config.score.anthropic.model == "test-model"
+        assert config.score.anthropic.effort == "low"
+
+    def test_an_openai_compatible_endpoint_is_configured_by_its_url(
+        self, config: Config
+    ):
+        assert config.score.openai.model == "an-open-model"
+        assert config.score.openai.base_url == "http://localhost:8080/v1"
+
+    def test_overriding_the_provider_keeps_each_model(self, config: Config):
+        overridden = config.with_overrides(score={"provider": "anthropic"})
+
+        assert overridden.score.anthropic.model == "test-model"
+
+    @pytest.mark.parametrize("key", ["model", "effort"])
+    def test_a_setting_left_at_the_old_level_says_where_it_went(
+        self, key: str, tmp_path: Path, fixtures_dir: Path
+    ):
+        """An unmigrated runner is told where the setting moved, not just refused."""
+        text = (fixtures_dir / "config.toml").read_text(encoding="utf-8")
+        path = tmp_path / "config.toml"
+        path.write_text(
+            text.replace("max_tokens = 1000", f'max_tokens = 1000\n{key} = "x"'),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(ConfigError, match=rf"\[score\.<provider>\] {key}"):
+            load_config(path)
+
+
 class TestFloorInvariant:
     """The floor equals the maximum consequence score, and is not a tunable.
 

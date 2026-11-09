@@ -5,14 +5,19 @@ from pathlib import Path
 
 import pytest
 
+from curated_feed import claude, openai_compat
+from curated_feed.config import load_config
 from curated_feed.models import MAX_CONSEQUENCE, Candidate, Response
 from curated_feed.policy import Prompt
 from curated_feed.score import (
     FileScorer,
     ScoreError,
     StubScorer,
+    make_scorer,
+    parse_response,
     read_response,
     score_day,
+    strip_reasoning,
     unfence,
 )
 from curated_feed.state import StateError
@@ -154,12 +159,47 @@ class TestUnfence:
         assert unfence('{"reason": "uses ``` marks"}') == '{"reason": "uses ``` marks"}'
 
 
+class TestStripReasoning:
+    """Open-weight reasoning models often think aloud in the response itself."""
+
+    def test_a_think_block_before_the_json_is_removed(self):
+        raw = '<think>\nIndex 3 has {braces}.\n</think>\n\n{"graded": []}'
+
+        assert strip_reasoning(raw) == '{"graded": []}'
+
+    def test_a_closing_tag_alone_still_ends_the_reasoning(self):
+        """Some chat templates open the block in the prompt, not the response."""
+        assert strip_reasoning('Index 3 matters.</think>{"graded": []}') == (
+            '{"graded": []}'
+        )
+
+    def test_text_without_reasoning_is_returned_unchanged(self):
+        assert strip_reasoning('{"graded": []}') == '{"graded": []}'
+
+    def test_a_fence_inside_the_reasoning_is_not_mistaken_for_the_answer(self):
+        """The reasoning goes first, or the fence search would find a draft."""
+        raw = (
+            '<think>Draft:\n```json\n{"graded": "draft"}\n```\n</think>\n'
+            '```json\n{"dropped": {}, "graded": []}\n```'
+        )
+
+        assert parse_response(raw).graded == []
+
+
 class TestReadResponse:
     """The saved artifact is raw text, so reading it back must be as tolerant."""
 
     def test_a_fenced_artifact_is_read_back(self, tmp_path: Path):
         path = tmp_path / "response.json"
         path.write_text('```json\n{"dropped": {}, "graded": []}\n```', encoding="utf-8")
+
+        assert read_response(path).graded == []
+
+    def test_an_artifact_that_thinks_aloud_is_read_back(self, tmp_path: Path):
+        path = tmp_path / "response.json"
+        path.write_text(
+            '<think>Hmm.</think>\n{"dropped": {}, "graded": []}', encoding="utf-8"
+        )
 
         assert read_response(path).graded == []
 
@@ -190,6 +230,56 @@ class FencedScorer:
 
     def generate(self, candidates, prompt, *, feedback=None) -> str:
         return '```json\n{"dropped": {}, "graded": []}\n```'
+
+
+class TestMakeScorer:
+    def test_the_anthropic_scorer_reads_its_own_table(
+        self, monkeypatch: pytest.MonkeyPatch, fixtures_dir: Path
+    ):
+        monkeypatch.setattr(claude, "build_client", lambda timeout_seconds: None)
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "anthropic"}
+        )
+
+        scorer = make_scorer(config, response_path=None)
+
+        assert isinstance(scorer, claude.AnthropicScorer)
+        assert (scorer.model, scorer.effort) == ("test-model", "low")
+
+    def test_the_openai_scorer_reads_its_own_table(
+        self, monkeypatch: pytest.MonkeyPatch, fixtures_dir: Path
+    ):
+        endpoints: list[str] = []
+        monkeypatch.setattr(
+            openai_compat,
+            "build_client",
+            lambda *, base_url, timeout_seconds: endpoints.append(base_url),
+        )
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "openai"}
+        )
+
+        scorer = make_scorer(config, response_path=None)
+
+        assert isinstance(scorer, openai_compat.OpenAICompatibleScorer)
+        assert (scorer.model, scorer.effort) == ("an-open-model", "")
+        assert endpoints == ["http://localhost:8080/v1"]
+
+    def test_a_missing_model_names_the_table_it_belongs_in(self, fixtures_dir: Path):
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "anthropic", "anthropic": {"model": ""}}
+        )
+
+        with pytest.raises(ScoreError, match=r"\[score\.anthropic\] model"):
+            make_scorer(config, response_path=None)
+
+    def test_a_missing_openai_model_names_its_table(self, fixtures_dir: Path):
+        config = load_config(fixtures_dir / "config.toml").with_overrides(
+            score={"provider": "openai", "openai": {"model": ""}}
+        )
+
+        with pytest.raises(ScoreError, match=r"\[score\.openai\] model"):
+            make_scorer(config, response_path=None)
 
 
 class TestScoreDay:

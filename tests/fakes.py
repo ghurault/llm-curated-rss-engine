@@ -1,4 +1,4 @@
-"""A stand-in for the Anthropic client, shared by the tests that need one.
+"""Stand-ins for the provider clients, shared by the tests that need them.
 
 The scorer takes its client by injection precisely so that no test has to reach
 the network or hold a key. Two of them need the same fake — the unit tests that
@@ -79,3 +79,89 @@ class _FakeStream:
 
     def get_final_message(self):
         return self.message
+
+
+# %%
+# The OpenAI-compatible client
+#
+# A Chat Completions stream is a sequence of chunks rather than one message, so
+# the fake hands one back: the text split across two deltas, the finish reason
+# on the second, and the usage on a final chunk with no choices — which is what
+# `stream_options={"include_usage": True}` makes a server send.
+
+CHAT_PROMPT_TOKENS = 1500
+CHAT_COMPLETION_TOKENS = 420
+CHAT_CACHED_TOKENS = 1024
+
+
+def make_chunks(
+    text: str = EMPTY_RESPONSE,
+    *,
+    finish_reason: str = "stop",
+    refusal: str | None = None,
+    is_usage_reported: bool = True,
+):
+    """A stand-in for one streamed completion, carrying only what the scorer reads."""
+    half = len(text) // 2
+    chunks = [
+        _chunk(SimpleNamespace(content=None, reasoning_content="Thinking...")),
+        _chunk(SimpleNamespace(content=text[:half], refusal=None)),
+        _chunk(
+            SimpleNamespace(content=text[half:], refusal=refusal),
+            finish_reason=finish_reason,
+        ),
+    ]
+    if is_usage_reported:
+        chunks.append(
+            SimpleNamespace(
+                choices=[],
+                usage=SimpleNamespace(
+                    prompt_tokens=CHAT_PROMPT_TOKENS,
+                    completion_tokens=CHAT_COMPLETION_TOKENS,
+                    prompt_tokens_details=SimpleNamespace(
+                        cached_tokens=CHAT_CACHED_TOKENS
+                    ),
+                ),
+            )
+        )
+    return chunks
+
+
+def _chunk(delta, *, finish_reason: str | None = None):
+    return SimpleNamespace(
+        choices=[SimpleNamespace(index=0, delta=delta, finish_reason=finish_reason)],
+        usage=None,
+    )
+
+
+class FakeChatClient:
+    """Records the request and streams back a canned completion.
+
+    Queued like `FakeClient`: one reply per call, the last one repeated.
+    """
+
+    def __init__(self, *completions):
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+        self.replies = list(completions) or [make_chunks()]
+        self.requests: list[dict] = []
+
+    def _create(self, **kwargs):
+        self.requests.append(kwargs)
+        reply = self.replies[min(len(self.requests) - 1, len(self.replies) - 1)]
+        return _FakeChunkStream(reply)
+
+
+class _FakeChunkStream:
+    """The context manager `chat.completions.create(stream=True)` returns."""
+
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+    def __iter__(self):
+        return iter(self.chunks)

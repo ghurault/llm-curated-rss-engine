@@ -25,58 +25,16 @@ configured and which values they accept; the default is the portable choice, and
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
 
 import anthropic
 
 from .models import Candidate
 from .policy import Prompt
-from .score import ScoreError
+from .score import RETRY_INSTRUCTION, ScoreError, TokenUsage, describe_api_error
 
 CACHE_CONTROL = {"type": "ephemeral"}
 TRUNCATED = "max_tokens"
 REFUSED = "refusal"
-
-RETRY_INSTRUCTION = (
-    "Your previous response did not validate: {feedback}\n"
-    "Return the whole response again as valid JSON, corrected."
-)
-
-
-@dataclass(slots=True)
-class TokenUsage:
-    """What a day of scoring cost, in tokens.
-
-    Accumulated across attempts, so a day that needed a retry reports what the
-    retry actually cost rather than what the successful call did.
-    """
-
-    calls: int = 0
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cache_read_tokens: int = 0
-    cache_write_tokens: int = 0
-
-    def add(self, usage: object) -> None:
-        """Fold one response's usage into the running total."""
-        self.calls += 1
-        self.input_tokens += getattr(usage, "input_tokens", 0) or 0
-        self.output_tokens += getattr(usage, "output_tokens", 0) or 0
-        self.cache_read_tokens += getattr(usage, "cache_read_input_tokens", 0) or 0
-        self.cache_write_tokens += getattr(usage, "cache_creation_input_tokens", 0) or 0
-
-    def format(self) -> str:
-        """One line for the run report.
-
-        >>> TokenUsage(calls=1, input_tokens=2, output_tokens=3).format()
-        '1 call, 2 in (0 cached), 3 out'
-        """
-        plural = "" if self.calls == 1 else "s"
-        return (
-            f"{self.calls} call{plural}, "
-            f"{self.input_tokens} in ({self.cache_read_tokens} cached), "
-            f"{self.output_tokens} out"
-        )
 
 
 class AnthropicScorer:
@@ -117,9 +75,17 @@ class AnthropicScorer:
                 "or run `ant auth login`; see step 7 of docs/SETUP.md."
             ) from exc
         except anthropic.APIError as exc:
-            raise ScoreError(f"the Anthropic API call failed: {_reason(exc)}") from exc
+            raise ScoreError(
+                f"the Anthropic API call failed: {describe_api_error(exc)}"
+            ) from exc
 
-        self.usage.add(message.usage)
+        usage = message.usage
+        self.usage.add(
+            input_tokens=getattr(usage, "input_tokens", 0) or 0,
+            output_tokens=getattr(usage, "output_tokens", 0) or 0,
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", 0) or 0,
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", 0) or 0,
+        )
         _check_stop_reason(message)
         return _extract_text(message)
 
@@ -145,28 +111,6 @@ class AnthropicScorer:
         if self.effort:
             request["output_config"] = {"effort": self.effort}
         return request
-
-
-def _reason(exc: Exception) -> str:
-    r"""What an API error says, plus what it was raised from.
-
-    The SDK turns every exception raised while sending into
-    `APIConnectionError`, whose whole message is "Connection error." — so a key
-    with a trailing newline, which is illegal in a header and fails before any
-    socket is opened, is reported identically to an unreachable host. The
-    distinction lives on `__cause__`, and only there.
-
-    >>> _reason(ValueError("Connection error."))
-    'Connection error.'
-    >>> wrapped = ValueError("Connection error.")
-    >>> wrapped.__cause__ = OSError("nodename nor servname provided")
-    >>> _reason(wrapped)
-    'Connection error. (OSError: nodename nor servname provided)'
-    """
-    cause = exc.__cause__
-    if cause is None or str(cause) in str(exc):
-        return str(exc)
-    return f"{exc} ({type(cause).__name__}: {cause})"
 
 
 def build_client(timeout_seconds: float | None) -> anthropic.Anthropic:

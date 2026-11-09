@@ -107,7 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        help="scorer to use (stub, file or anthropic), overriding the config",
+        help="scorer to use (stub, file, anthropic or openai), overriding the config",
     )
     parser.add_argument(
         "--response",

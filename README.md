@@ -41,7 +41,7 @@ Your feeds live in a private configuration repository of your own, which runs th
 - 🎲 **One discretionary "serendipity" pick per day**: room for the rare item that matters but doesn't fit the policy on paper.
 - 🔒 **Optional paywall detection**: articles marked subscriber-only in their own schema.org markup are dropped before the cap, so the slot goes to something you can actually read. Off by default, switched on per feed; a page that can't be reached is treated as readable, never gated on a guess.
 - 📚 **Multiple feeds from one instance**: each runner has its own sources, policy and published URL, scheduled independently.
-- 🤖 **Supported AI providers**: Claude (API).
+- 🤖 **Supported AI providers**: Claude (API), and any OpenAI-compatible endpoint: OpenAI, OpenRouter, Ollama, vLLM and the like.
 - ☁️ **Supported host providers**: Cloudflare Workers (free): static asset hosting, no build pipeline needed.
 - ⚙️ **Automation via GitHub Actions (free)**: one scheduled job per feed, daily, through a reusable workflow your configuration repository pins to an exact engine release.
 - 💸 **Change-aware deploys**: an unchanged feed isn't re-uploaded, so a quiet day costs nothing.
@@ -50,7 +50,7 @@ Your feeds live in a private configuration repository of your own, which runs th
 ## Privacy
 
 The design assumes **your configuration repository stays private**, because your sources and editorial policy describe what you care about.
-Both are sent to the model provider on every run; Anthropic does not train on API inputs by default, and the provider can be swapped for a self-hosted one.
+Both are sent to the model provider on every run; Anthropic does not train on API inputs by default, and an OpenAI-compatible `base_url` can point at a self-hosted or confidential-computing endpoint instead.
 The published feed is public but hard to find: its URL is unguessable, and `robots.txt` and a `noindex` header keep it out of search engines.
 [docs/PRIVACY.md](docs/PRIVACY.md) goes through what each part of the system can see.
 
