@@ -6,7 +6,7 @@ For every command's options see [CLI.md](CLI.md); for the reasoning, [ARCHITECTU
 You start from the [example configuration repository](https://github.com/ghurault/llm-curated-rss-example), which already holds one working feed, both workflows and a devcontainer.
 This guide is what it cannot do for you: your subscriptions, your policy, your URL and your credentials.
 
-**You will need**: a feed reader that exports OPML, Docker and an editor that opens devcontainers (VS Code with _Dev Containers_), a GitHub account, a Cloudflare account (free Workers tier), and from step 7 an Anthropic API account with prepaid credits.
+**You will need**: a feed reader that exports OPML, Docker and an editor that opens devcontainers (VS Code with _Dev Containers_), a GitHub account, a Cloudflare account (free Workers tier), and from step 7 an API key for a model: Anthropic's, or any OpenAI-compatible endpoint's.
 
 Do the steps in order. All of them can be undone cheaply except step 8: the feed's URL is part of its identity.
 
@@ -109,11 +109,17 @@ The model drives the cost, and is chosen in `[score.anthropic]`.
 The example starts on Haiku 4.5, which is cheap and rejects the `effort` parameter, so `effort` is left empty there.
 The template's default, Sonnet at `effort = "medium"`, is the better choice when the picks matter more than the bill; change both lines together.
 
+**Or any OpenAI-compatible endpoint.** Set `provider = "openai"` and fill `[score.openai]`: `base_url` (empty is OpenAI itself), and `model` as that endpoint names it.
+The key is always `OPENAI_API_KEY`; a local server that needs none still wants the variable set, to anything.
+Leave `effort` empty unless the model is known to accept `reasoning_effort`.
+
 Then re-score a day you have labelled, and compare:
 
 ```bash
 curate-run --config feeds/<name>/config.toml --date 2026-08-08 --from score --provider anthropic
 ```
+
+`--provider` picks the model from that provider's own table, so the same day can be scored by both and the picks compared.
 
 ## 8. Choose the feed's URL
 
@@ -167,17 +173,20 @@ curate-deploy --config feeds/<name>/config.toml --dry-run --provider wrangler
 The corpus and the published log persist in your repository's Actions cache; there is nothing to set up.
 Keep its `concurrency` block where it is: a group named inside a called workflow is scoped to the caller.
 
-1. **Add three repository secrets** under **Settings → Secrets and variables → Actions**. Don't put them in an environment: `curate.yml` names none, so they would resolve to empty strings without any warning.
+1. **Add the repository secrets** under **Settings → Secrets and variables → Actions**. Don't put them in an environment: `curate.yml` names none, so they would resolve to empty strings without any warning.
 
    | secret                  | what it is                                                      |
    | ----------------------- | --------------------------------------------------------------- |
-   | `ANTHROPIC_API_KEY`     | the scoring credential                                          |
+   | `ANTHROPIC_API_KEY`     | the scoring credential, for `provider = "anthropic"`            |
+   | `OPENAI_API_KEY`        | the scoring credential, for `provider = "openai"`               |
    | `CLOUDFLARE_API_TOKEN`  | from the **Edit Cloudflare Workers** template, for that account |
    | `CLOUDFLARE_ACCOUNT_ID` | from the dashboard sidebar                                      |
 
+   Only the scoring key your runners use is needed, and `daily.yml` must pass it on to `curate.yml` under `secrets:`.
+
 2. **Choose the engine commit.** The `uses:` line pins a full SHA from this repository's `main`, so your daily run changes only when you move it. Keep the example's, or move it and the devcontainer's image together (step 2).
 3. **Uncomment the `pull_request:` and `push:` triggers** in `validate.yml`, which checks the runners and the wiring around them.
-4. **Dispatch `daily` by hand** (**Actions → daily → Run workflow**), first with `stub` to prove the credentials, then with `anthropic`.
+4. **Dispatch `daily` by hand** (**Actions → daily → Run workflow**), first with `stub` to prove the credentials, then with your provider.
 
 ## 11. The schedule
 
