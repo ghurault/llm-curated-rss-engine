@@ -24,6 +24,7 @@ import argparse
 import re
 import sys
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Protocol
@@ -50,8 +51,85 @@ MAX_ATTEMPTS = 2
 RESPONSE_STAGE = "response"
 
 
+RETRY_INSTRUCTION = (
+    "Your previous response did not validate: {feedback}\n"
+    "Return the whole response again as valid JSON, corrected."
+)
+
+
 class ScoreError(Exception):
     """Raised when a usable response cannot be obtained."""
+
+
+# --------------------------------------------------------------------------- #
+# Shared by the provider backends
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(slots=True)
+class TokenUsage:
+    """What a day of scoring cost, in tokens.
+
+    Accumulated across attempts, so a day that needed a retry reports what the
+    retry actually cost rather than what the successful call did. It takes
+    plain counts because every provider names the same numbers differently.
+    """
+
+    calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
+
+    def add(
+        self,
+        *,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        cache_read_tokens: int = 0,
+        cache_write_tokens: int = 0,
+    ) -> None:
+        """Fold one response's usage into the running total."""
+        self.calls += 1
+        self.input_tokens += input_tokens
+        self.output_tokens += output_tokens
+        self.cache_read_tokens += cache_read_tokens
+        self.cache_write_tokens += cache_write_tokens
+
+    def format(self) -> str:
+        """One line for the run report.
+
+        >>> TokenUsage(calls=1, input_tokens=2, output_tokens=3).format()
+        '1 call, 2 in (0 cached), 3 out'
+        """
+        plural = "" if self.calls == 1 else "s"
+        return (
+            f"{self.calls} call{plural}, "
+            f"{self.input_tokens} in ({self.cache_read_tokens} cached), "
+            f"{self.output_tokens} out"
+        )
+
+
+def describe_api_error(exc: Exception) -> str:
+    r"""What an API error says, plus what it was raised from.
+
+    The provider SDKs turn every exception raised while sending into a
+    connection error whose whole message is "Connection error." — so a key with
+    a trailing newline, which is illegal in a header and fails before any socket
+    is opened, is reported identically to an unreachable host. The distinction
+    lives on `__cause__`, and only there.
+
+    >>> describe_api_error(ValueError("Connection error."))
+    'Connection error.'
+    >>> wrapped = ValueError("Connection error.")
+    >>> wrapped.__cause__ = OSError("nodename nor servname provided")
+    >>> describe_api_error(wrapped)
+    'Connection error. (OSError: nodename nor servname provided)'
+    """
+    cause = exc.__cause__
+    if cause is None or str(cause) in str(exc):
+        return str(exc)
+    return f"{exc} ({type(cause).__name__}: {cause})"
 
 
 class Scorer(Protocol):
